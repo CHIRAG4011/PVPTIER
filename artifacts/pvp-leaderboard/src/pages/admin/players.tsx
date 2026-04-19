@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Trophy, Edit, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Trophy, Edit, RotateCcw, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { TierBadge } from "@/components/ui/tier-badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -36,6 +36,7 @@ export default function AdminPlayers() {
 
   const updateMutation = useAdminUpdatePlayerStats();
   const resetMutation = useResetPlayerStats();
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const form = useForm<z.infer<typeof updateSchema>>({
     resolver: zodResolver(updateSchema),
@@ -80,6 +81,29 @@ export default function AdminPlayers() {
           refetch();
         }
       });
+    }
+  };
+
+  const handleDelete = async (id: number, username: string) => {
+    if (!confirm(`Permanently delete ${username}? This cannot be undone.`)) return;
+    setDeletingId(id);
+    try {
+      const token = localStorage.getItem("pvp_token");
+      const res = await fetch(`/api/admin/players/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`${username} has been deleted.`);
+        refetch();
+      } else {
+        toast.error(data.message || "Failed to delete player");
+      }
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -202,8 +226,12 @@ export default function AdminPlayers() {
                         </DialogContent>
                       </Dialog>
 
-                      <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => handleReset(p.id, p.minecraftUsername)}>
+                      <Button variant="outline" size="sm" className="text-yellow-500 hover:bg-yellow-500/10" onClick={() => handleReset(p.id, p.minecraftUsername)}>
                         <RotateCcw className="w-4 h-4" />
+                      </Button>
+
+                      <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => handleDelete(p.id, p.minecraftUsername)} disabled={deletingId === p.id}>
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </TableCell>
                   </TableRow>

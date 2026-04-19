@@ -2,7 +2,7 @@ import { Shield, Users, Trophy, Ticket, Target, Bell, History, Menu, LogOut, Che
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const adminLinks = [
@@ -22,9 +22,28 @@ const configLinks = [
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {
-  const [location] = useLocation();
-  const { user, logout } = useAuth();
+  const [location, setLocation] = useLocation();
+  const { user, logout, isLoading } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    setLocation("/login");
+  };
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      setLocation("/login");
+    }
+  }, [user, isLoading, setLocation]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   // Redirect if not admin (handled by routes usually, but good fallback)
   if (user && !['admin', 'superadmin', 'moderator'].includes(user.role)) {
@@ -41,6 +60,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       </div>
     );
   }
+
+  if (!user) return null;
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-card border-r border-border">
@@ -100,7 +121,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             Back to Site
           </Link>
         </Button>
-        <Button variant="ghost" className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => logout()}>
+        <Button variant="ghost" className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleLogout}>
           <LogOut className="w-4 h-4" />
           Sign Out
         </Button>

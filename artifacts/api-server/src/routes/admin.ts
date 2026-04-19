@@ -163,6 +163,34 @@ router.patch("/admin/players/:id/stats", requireAdmin, async (req: Request, res:
   res.json({ success: true, message: "Player stats updated" });
 });
 
+router.delete("/admin/players/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const adminUser = (req as Request & { user?: JwtPayload }).user!;
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const id = parseInt(rawId, 10);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "invalid_id", message: "Invalid player ID" });
+    return;
+  }
+
+  const player = await db.select().from(playersTable).where(eq(playersTable.id, id)).limit(1);
+  if (!player.length) {
+    res.status(404).json({ error: "not_found", message: "Player not found" });
+    return;
+  }
+
+  await db.delete(playersTable).where(eq(playersTable.id, id));
+
+  await db.insert(adminLogsTable).values({
+    adminId: adminUser.userId,
+    adminUsername: adminUser.username,
+    action: "delete_player",
+    target: `player:${id}`,
+    details: `Deleted player: ${player[0].minecraftUsername}`,
+  });
+
+  res.json({ success: true, message: "Player deleted" });
+});
+
 router.post("/admin/players/:id/reset", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
