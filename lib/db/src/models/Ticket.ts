@@ -35,7 +35,7 @@ const TicketReplySchema = new Schema<ITicketReply>(
       virtuals: true,
       transform: (_, ret) => {
         ret.id = ret._id.toString();
-        delete ret.__v;
+        delete (ret as Record<string, unknown>).__v;
         return ret;
       },
     },
@@ -58,7 +58,7 @@ const TicketSchema = new Schema<ITicket>(
       virtuals: true,
       transform: (_, ret) => {
         ret.id = ret._id.toString();
-        delete ret.__v;
+        delete (ret as Record<string, unknown>).__v;
         return ret;
       },
     },

@@ -55,7 +55,7 @@ router.post("/admin/roles", requireAdmin, async (req: Request, res: Response): P
 router.patch("/admin/roles/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
     res.status(400).json({ error: "invalid_id" });
     return;
   }
@@ -87,7 +87,7 @@ router.patch("/admin/roles/:id", requireAdmin, async (req: Request, res: Respons
 router.delete("/admin/roles/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
     res.status(400).json({ error: "invalid_id" });
     return;
   }

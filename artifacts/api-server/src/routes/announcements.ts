@@ -48,7 +48,7 @@ router.post("/announcements", requireAdmin, async (req: Request, res: Response):
 
 router.delete("/announcements/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid announcement ID" });
     return;
   }

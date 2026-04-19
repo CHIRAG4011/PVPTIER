@@ -55,7 +55,7 @@ router.get("/submissions", requireAdmin, async (req: Request, res: Response): Pr
 router.post("/submissions/:id/approve", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid submission ID" });
     return;
   }
@@ -89,7 +89,7 @@ router.post("/submissions/:id/approve", requireAdmin, async (req: Request, res: 
 router.post("/submissions/:id/reject", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid submission ID" });
     return;
   }

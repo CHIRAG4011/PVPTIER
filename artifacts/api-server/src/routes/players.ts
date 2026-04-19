@@ -63,7 +63,7 @@ router.get("/players", async (req: Request, res: Response): Promise<void> => {
 
 router.get("/players/:id", async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid player ID" });
     return;
   }
@@ -102,7 +102,7 @@ router.get("/players/:id", async (req: Request, res: Response): Promise<void> =>
 
 router.get("/players/:id/stats", async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid player ID" });
     return;
   }
@@ -127,7 +127,7 @@ router.get("/players/:id/stats", async (req: Request, res: Response): Promise<vo
 
 router.get("/players/:id/matches", async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid player ID" });
     return;
   }

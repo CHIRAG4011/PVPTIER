@@ -26,7 +26,7 @@ const AnnouncementSchema = new Schema<IAnnouncement>(
       virtuals: true,
       transform: (_, ret) => {
         ret.id = ret._id.toString();
-        delete ret.__v;
+        delete (ret as Record<string, unknown>).__v;
         return ret;
       },
     },

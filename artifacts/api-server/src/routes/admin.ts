@@ -50,7 +50,7 @@ router.get("/admin/users", requireAdmin, async (req: Request, res: Response): Pr
 router.post("/admin/users/:id/ban", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid user ID" });
     return;
   }
@@ -77,7 +77,7 @@ router.post("/admin/users/:id/ban", requireAdmin, async (req: Request, res: Resp
 router.post("/admin/users/:id/unban", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid user ID" });
     return;
   }
@@ -98,7 +98,7 @@ router.post("/admin/users/:id/unban", requireAdmin, async (req: Request, res: Re
 router.patch("/admin/users/:id/role", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid user ID" });
     return;
   }
@@ -125,7 +125,7 @@ router.patch("/admin/users/:id/role", requireAdmin, async (req: Request, res: Re
 router.patch("/admin/players/:id/stats", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid player ID" });
     return;
   }
@@ -158,7 +158,7 @@ router.patch("/admin/players/:id/stats", requireAdmin, async (req: Request, res:
 router.delete("/admin/players/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid player ID" });
     return;
   }
@@ -185,7 +185,7 @@ router.delete("/admin/players/:id", requireAdmin, async (req: Request, res: Resp
 router.post("/admin/players/:id/reset", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid player ID" });
     return;
   }

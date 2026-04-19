@@ -68,7 +68,7 @@ router.post("/tickets", requireAuth, async (req: Request, res: Response): Promis
 router.get("/tickets/:id", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = (req as Request & { user?: JwtPayload }).user!;
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid ticket ID" });
     return;
   }
@@ -97,7 +97,7 @@ router.get("/tickets/:id", requireAuth, async (req: Request, res: Response): Pro
 router.post("/tickets/:id/reply", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = (req as Request & { user?: JwtPayload }).user!;
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid ticket ID" });
     return;
   }
@@ -138,7 +138,7 @@ router.post("/tickets/:id/reply", requireAuth, async (req: Request, res: Respons
 router.post("/tickets/:id/close", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = (req as Request & { user?: JwtPayload }).user!;
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid ticket ID" });
     return;
   }
