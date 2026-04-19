@@ -1,6 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "cd ../.. && pnpm install && pnpm --filter @workspace/pvp-leaderboard run build",
+  "framework": null,
+  "installCommand": "cd ../.. && pnpm install",
+  "buildCommand": "pnpm run build",
   "outputDirectory": "dist/public",
   "rewrites": [
     {
