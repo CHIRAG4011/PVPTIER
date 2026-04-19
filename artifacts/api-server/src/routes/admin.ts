@@ -13,13 +13,23 @@ router.get("/admin/users", requireAdmin, async (req: Request, res: Response): Pr
   const limit = 20;
   const offset = (page - 1) * limit;
   const search = parsed.success ? parsed.data.search : undefined;
+  const role = parsed.success ? parsed.data.role : undefined;
 
-  const users = search
-    ? await db.select().from(usersTable).where(ilike(usersTable.username, `%${search}%`)).limit(limit).offset(offset)
+  const buildWhere = () => {
+    const conditions = [];
+    if (search) conditions.push(ilike(usersTable.username, `%${search}%`));
+    if (role) conditions.push(eq(usersTable.role, role as "user" | "moderator" | "admin" | "superadmin"));
+    return conditions.length > 0 ? and(...conditions) : undefined;
+  };
+
+  const where = buildWhere();
+
+  const users = where
+    ? await db.select().from(usersTable).where(where).orderBy(desc(usersTable.createdAt)).limit(limit).offset(offset)
     : await db.select().from(usersTable).orderBy(desc(usersTable.createdAt)).limit(limit).offset(offset);
 
-  const allUsers = search
-    ? await db.select().from(usersTable).where(ilike(usersTable.username, `%${search}%`))
+  const allUsers = where
+    ? await db.select().from(usersTable).where(where)
     : await db.select().from(usersTable);
 
   res.json({
@@ -240,13 +250,17 @@ router.get("/admin/logs", requireAdmin, async (req: Request, res: Response): Pro
   const page = parsed.success ? (parsed.data.page ?? 1) : 1;
   const limit = 20;
   const offset = (page - 1) * limit;
+  const action = parsed.success ? parsed.data.action : undefined;
 
-  const logs = await db.select().from(adminLogsTable)
-    .orderBy(desc(adminLogsTable.createdAt))
-    .limit(limit)
-    .offset(offset);
+  const where = action ? eq(adminLogsTable.action, action) : undefined;
 
-  const allLogs = await db.select().from(adminLogsTable);
+  const logs = where
+    ? await db.select().from(adminLogsTable).where(where).orderBy(desc(adminLogsTable.createdAt)).limit(limit).offset(offset)
+    : await db.select().from(adminLogsTable).orderBy(desc(adminLogsTable.createdAt)).limit(limit).offset(offset);
+
+  const allLogs = where
+    ? await db.select().from(adminLogsTable).where(where)
+    : await db.select().from(adminLogsTable);
 
   res.json({
     logs,

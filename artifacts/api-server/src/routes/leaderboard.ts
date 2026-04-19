@@ -82,10 +82,10 @@ router.get("/leaderboard/top", async (_req: Request, res: Response): Promise<voi
 
   res.json({
     byGamemode: {
-      sword: formatPlayer(allPlayers[0] ?? allPlayers[0]),
-      axe: formatPlayer(allPlayers[1] ?? allPlayers[0]),
-      uhc: formatPlayer(allPlayers[2] ?? allPlayers[0]),
-      vanilla: formatPlayer(allPlayers[3] ?? allPlayers[0]),
+      sword: allPlayers[0] ? formatPlayer(allPlayers[0]) : null,
+      axe: allPlayers[1] ? formatPlayer(allPlayers[1]) : null,
+      uhc: allPlayers[2] ? formatPlayer(allPlayers[2]) : null,
+      vanilla: allPlayers[3] ? formatPlayer(allPlayers[3]) : null,
     },
     overall: allPlayers.slice(0, 5).map(formatPlayer),
   });

@@ -34,13 +34,17 @@ router.get("/submissions", requireAdmin, async (req: Request, res: Response): Pr
   const page = parsed.success ? (parsed.data.page ?? 1) : 1;
   const limit = 20;
   const offset = (page - 1) * limit;
+  const status = parsed.success ? parsed.data.status : undefined;
 
-  const submissions = await db.select().from(submissionsTable)
-    .orderBy(desc(submissionsTable.createdAt))
-    .limit(limit)
-    .offset(offset);
+  const where = status ? eq(submissionsTable.status, status as "pending" | "approved" | "rejected") : undefined;
 
-  const all = await db.select().from(submissionsTable);
+  const submissions = where
+    ? await db.select().from(submissionsTable).where(where).orderBy(desc(submissionsTable.createdAt)).limit(limit).offset(offset)
+    : await db.select().from(submissionsTable).orderBy(desc(submissionsTable.createdAt)).limit(limit).offset(offset);
+
+  const all = where
+    ? await db.select().from(submissionsTable).where(where)
+    : await db.select().from(submissionsTable);
 
   res.json({
     submissions,

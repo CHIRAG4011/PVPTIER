@@ -106,8 +106,8 @@ export default function Home() {
                   <Skeleton key={i} className="h-24 w-full rounded-xl" />
                 ))
               ) : topPlayers?.byGamemode && (
-                Object.entries(topPlayers.byGamemode).slice(0, 6).map(([gamemode, player]) => (
-                  <Link key={gamemode} href={`/player/${player.id}`}>
+                Object.entries(topPlayers.byGamemode).filter(([, player]) => player !== null).slice(0, 6).map(([gamemode, player]) => (
+                  <Link key={gamemode} href={`/player/${player!.id}`}>
                     <div className="glass-card p-4 rounded-xl hover:border-primary/50 transition-colors cursor-pointer group flex items-center gap-4">
                       <div className="relative">
                         <Avatar className="h-12 w-12 border-2 border-primary/50 group-hover:border-primary transition-colors">

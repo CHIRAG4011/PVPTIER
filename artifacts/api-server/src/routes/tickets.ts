@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { db, ticketsTable, ticketRepliesTable } from "@workspace/db";
 import { CreateTicketBody, ListTicketsQueryParams, ReplyToTicketBody } from "@workspace/api-zod";
 import { requireAuth, requireAdmin } from "../lib/auth";
@@ -13,16 +13,29 @@ router.get("/tickets", requireAuth, async (req: Request, res: Response): Promise
   const page = parsed.success ? (parsed.data.page ?? 1) : 1;
   const limit = 20;
   const offset = (page - 1) * limit;
+  const status = parsed.success ? parsed.data.status : undefined;
 
   const isAdmin = ["admin", "superadmin", "moderator"].includes(user.role);
 
-  const tickets = isAdmin
-    ? await db.select().from(ticketsTable).orderBy(desc(ticketsTable.createdAt)).limit(limit).offset(offset)
-    : await db.select().from(ticketsTable).where(eq(ticketsTable.userId, user.userId)).orderBy(desc(ticketsTable.createdAt)).limit(limit).offset(offset);
+  const buildWhere = () => {
+    if (isAdmin) {
+      return status ? eq(ticketsTable.status, status as "open" | "pending" | "closed") : undefined;
+    }
+    if (status) {
+      return and(eq(ticketsTable.userId, user.userId), eq(ticketsTable.status, status as "open" | "pending" | "closed"));
+    }
+    return eq(ticketsTable.userId, user.userId);
+  };
 
-  const allTickets = isAdmin
-    ? await db.select().from(ticketsTable)
-    : await db.select().from(ticketsTable).where(eq(ticketsTable.userId, user.userId));
+  const where = buildWhere();
+
+  const tickets = where
+    ? await db.select().from(ticketsTable).where(where).orderBy(desc(ticketsTable.createdAt)).limit(limit).offset(offset)
+    : await db.select().from(ticketsTable).orderBy(desc(ticketsTable.createdAt)).limit(limit).offset(offset);
+
+  const allTickets = where
+    ? await db.select().from(ticketsTable).where(where)
+    : await db.select().from(ticketsTable);
 
   res.json({
     tickets,
