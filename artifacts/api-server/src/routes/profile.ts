@@ -1,7 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq } from "drizzle-orm";
-import { db, usersTable, passwordResetsTable } from "@workspace/db";
-import { requireAuth, hashPassword, comparePasswords, verifyToken, signToken } from "../lib/auth";
+import { User, PasswordReset } from "@workspace/db";
+import { requireAuth, hashPassword, comparePasswords, signToken } from "../lib/auth";
 import type { JwtPayload } from "../lib/auth";
 import crypto from "crypto";
 
@@ -22,16 +21,21 @@ router.patch("/users/me/username", requireAuth, async (req: Request, res: Respon
     return;
   }
 
-  const existing = await db.select().from(usersTable).where(eq(usersTable.username, trimmed)).limit(1);
-  if (existing.length > 0 && existing[0].id !== authUser.userId) {
+  const existing = await User.findOne({ username: trimmed });
+  if (existing && existing._id.toString() !== authUser.userId) {
     res.status(400).json({ error: "username_taken", message: "Username already taken" });
     return;
   }
 
-  await db.update(usersTable).set({ username: trimmed, updatedAt: new Date() }).where(eq(usersTable.id, authUser.userId));
+  await User.findByIdAndUpdate(authUser.userId, { username: trimmed });
 
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, authUser.userId)).limit(1);
-  const newToken = signToken({ userId: user.id, email: user.email, username: user.username, role: user.role });
+  const user = await User.findById(authUser.userId);
+  const newToken = signToken({
+    userId: authUser.userId,
+    email: user!.email,
+    username: user!.username,
+    role: user!.role,
+  });
 
   res.json({ success: true, message: "Username updated", token: newToken });
 });
@@ -41,23 +45,20 @@ router.patch("/users/me/avatar", requireAuth, async (req: Request, res: Response
   const { avatarUrl } = req.body;
 
   if (avatarUrl && typeof avatarUrl === "string") {
-    try {
-      new URL(avatarUrl);
-    } catch {
+    try { new URL(avatarUrl); } catch {
       res.status(400).json({ error: "validation_error", message: "Invalid URL format" });
       return;
     }
   }
 
-  await db.update(usersTable).set({ avatarUrl: avatarUrl || null, updatedAt: new Date() }).where(eq(usersTable.id, authUser.userId));
+  await User.findByIdAndUpdate(authUser.userId, { avatarUrl: avatarUrl || null });
   res.json({ success: true, message: "Avatar updated" });
 });
 
 router.patch("/users/me/bio", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const authUser = (req as Request & { user?: JwtPayload }).user!;
   const { bio } = req.body;
-
-  await db.update(usersTable).set({ bio: bio || null, updatedAt: new Date() }).where(eq(usersTable.id, authUser.userId));
+  await User.findByIdAndUpdate(authUser.userId, { bio: bio || null });
   res.json({ success: true, message: "Bio updated" });
 });
 
@@ -70,7 +71,7 @@ router.patch("/users/me/password", requireAuth, async (req: Request, res: Respon
     return;
   }
 
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, authUser.userId)).limit(1);
+  const user = await User.findById(authUser.userId);
   if (!user?.passwordHash) {
     res.status(400).json({ error: "no_password", message: "Account uses social login" });
     return;
@@ -83,7 +84,7 @@ router.patch("/users/me/password", requireAuth, async (req: Request, res: Respon
   }
 
   const newHash = await hashPassword(newPassword);
-  await db.update(usersTable).set({ passwordHash: newHash, updatedAt: new Date() }).where(eq(usersTable.id, authUser.userId));
+  await User.findByIdAndUpdate(authUser.userId, { passwordHash: newHash });
   res.json({ success: true, message: "Password changed" });
 });
 
@@ -94,7 +95,7 @@ router.post("/auth/forgot-password", async (req: Request, res: Response): Promis
     return;
   }
 
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+  const user = await User.findOne({ email: email.toLowerCase() });
   if (!user) {
     res.json({ success: true, message: "If that email exists, a reset token has been generated." });
     return;
@@ -103,8 +104,8 @@ router.post("/auth/forgot-password", async (req: Request, res: Response): Promis
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
-  await db.delete(passwordResetsTable).where(eq(passwordResetsTable.userId, user.id));
-  await db.insert(passwordResetsTable).values({ userId: user.id, token, expiresAt, used: false });
+  await PasswordReset.deleteMany({ userId: user._id.toString() });
+  await PasswordReset.create({ userId: user._id.toString(), token, expiresAt, used: false });
 
   res.json({
     success: true,
@@ -123,15 +124,15 @@ router.post("/auth/reset-password", async (req: Request, res: Response): Promise
     return;
   }
 
-  const [reset] = await db.select().from(passwordResetsTable).where(eq(passwordResetsTable.token, token)).limit(1);
+  const reset = await PasswordReset.findOne({ token });
   if (!reset || reset.used || reset.expiresAt < new Date()) {
     res.status(400).json({ error: "invalid_token", message: "Reset token is invalid or expired" });
     return;
   }
 
   const newHash = await hashPassword(newPassword);
-  await db.update(usersTable).set({ passwordHash: newHash, updatedAt: new Date() }).where(eq(usersTable.id, reset.userId));
-  await db.update(passwordResetsTable).set({ used: true }).where(eq(passwordResetsTable.token, token));
+  await User.findByIdAndUpdate(reset.userId, { passwordHash: newHash });
+  await PasswordReset.findByIdAndUpdate(reset._id, { used: true });
 
   res.json({ success: true, message: "Password reset successfully. You can now log in." });
 });

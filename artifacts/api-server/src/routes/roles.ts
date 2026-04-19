@@ -1,19 +1,19 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq } from "drizzle-orm";
-import { db, customRolesTable, userCustomRolesTable, adminLogsTable, usersTable } from "@workspace/db";
+import { CustomRole, UserCustomRole, AdminLog } from "@workspace/db";
 import { requireAdmin } from "../lib/auth";
 import type { JwtPayload } from "../lib/auth";
 import { ALL_PERMISSIONS } from "../lib/permissions";
+import mongoose from "mongoose";
 
 const router: IRouter = Router();
 
 router.get("/admin/roles", requireAdmin, async (_req: Request, res: Response): Promise<void> => {
-  const roles = await db.select().from(customRolesTable).orderBy(customRolesTable.createdAt);
+  const roles = await CustomRole.find().sort({ createdAt: 1 });
 
   const rolesWithMembers = await Promise.all(
     roles.map(async (role) => {
-      const members = await db.select().from(userCustomRolesTable).where(eq(userCustomRolesTable.customRoleId, role.id));
-      return { ...role, memberCount: members.length };
+      const memberCount = await UserCustomRole.countDocuments({ customRoleId: role._id.toString() });
+      return { ...role.toJSON(), id: role._id.toString(), memberCount };
     })
   );
 
@@ -33,44 +33,47 @@ router.post("/admin/roles", requireAdmin, async (req: Request, res: Response): P
     ? permissions.filter((p: string) => (ALL_PERMISSIONS as readonly string[]).includes(p))
     : [];
 
-  const [role] = await db.insert(customRolesTable).values({
+  const role = await CustomRole.create({
     name: name.trim(),
     color: color || "#888888",
     icon: icon || "shield",
     permissions: validPerms,
     createdBy: adminUser.userId,
-  }).returning();
+  });
 
-  await db.insert(adminLogsTable).values({
+  await AdminLog.create({
     adminId: adminUser.userId,
     adminUsername: adminUser.username,
     action: "create_role",
-    target: `role:${role.id}`,
+    target: `role:${role._id}`,
     details: `Created role: ${role.name}`,
   });
 
-  res.status(201).json(role);
+  res.status(201).json({ ...role.toJSON(), id: role._id.toString() });
 });
 
 router.patch("/admin/roles/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
-  const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) { res.status(400).json({ error: "invalid_id" }); return; }
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400).json({ error: "invalid_id" });
+    return;
+  }
 
   const { name, color, icon, permissions } = req.body;
   const validPermsUpdate = Array.isArray(permissions)
     ? permissions.filter((p: string) => (ALL_PERMISSIONS as readonly string[]).includes(p))
     : undefined;
 
-  await db.update(customRolesTable).set({
-    ...(name ? { name: name.trim() } : {}),
-    ...(color ? { color } : {}),
-    ...(icon !== undefined ? { icon } : {}),
-    ...(validPermsUpdate !== undefined ? { permissions: validPermsUpdate } : {}),
-    updatedAt: new Date(),
-  }).where(eq(customRolesTable.id, id));
+  const update: any = {};
+  if (name) update.name = name.trim();
+  if (color) update.color = color;
+  if (icon !== undefined) update.icon = icon;
+  if (validPermsUpdate !== undefined) update.permissions = validPermsUpdate;
 
-  await db.insert(adminLogsTable).values({
+  const updated = await CustomRole.findByIdAndUpdate(id, update, { new: true });
+
+  await AdminLog.create({
     adminId: adminUser.userId,
     adminUsername: adminUser.username,
     action: "update_role",
@@ -78,19 +81,23 @@ router.patch("/admin/roles/:id", requireAdmin, async (req: Request, res: Respons
     details: `Updated role #${id}`,
   });
 
-  const [updated] = await db.select().from(customRolesTable).where(eq(customRolesTable.id, id));
-  res.json(updated);
+  res.json({ ...updated?.toJSON(), id: updated?._id.toString() });
 });
 
 router.delete("/admin/roles/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
-  const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) { res.status(400).json({ error: "invalid_id" }); return; }
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400).json({ error: "invalid_id" });
+    return;
+  }
 
-  await db.delete(userCustomRolesTable).where(eq(userCustomRolesTable.customRoleId, id));
-  await db.delete(customRolesTable).where(eq(customRolesTable.id, id));
+  await Promise.all([
+    UserCustomRole.deleteMany({ customRoleId: id }),
+    CustomRole.findByIdAndDelete(id),
+  ]);
 
-  await db.insert(adminLogsTable).values({
+  await AdminLog.create({
     adminId: adminUser.userId,
     adminUsername: adminUser.username,
     action: "delete_role",
@@ -103,20 +110,20 @@ router.delete("/admin/roles/:id", requireAdmin, async (req: Request, res: Respon
 
 router.post("/admin/users/:id/custom-role", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
-  const userId = parseInt(req.params.id, 10);
+  const userId = req.params.id;
   const { roleId } = req.body;
-  if (isNaN(userId) || !roleId) { res.status(400).json({ error: "invalid_params" }); return; }
-
-  const existing = await db.select().from(userCustomRolesTable)
-    .where(eq(userCustomRolesTable.userId, userId)).limit(1);
-  
-  if (existing.length > 0) {
-    await db.update(userCustomRolesTable).set({ customRoleId: roleId, assignedBy: adminUser.userId }).where(eq(userCustomRolesTable.userId, userId));
-  } else {
-    await db.insert(userCustomRolesTable).values({ userId, customRoleId: roleId, assignedBy: adminUser.userId });
+  if (!userId || !roleId) {
+    res.status(400).json({ error: "invalid_params" });
+    return;
   }
 
-  await db.insert(adminLogsTable).values({
+  await UserCustomRole.findOneAndUpdate(
+    { userId },
+    { userId, customRoleId: roleId, assignedBy: adminUser.userId },
+    { upsert: true }
+  );
+
+  await AdminLog.create({
     adminId: adminUser.userId,
     adminUsername: adminUser.username,
     action: "assign_custom_role",
@@ -129,12 +136,11 @@ router.post("/admin/users/:id/custom-role", requireAdmin, async (req: Request, r
 
 router.delete("/admin/users/:id/custom-role", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
-  const userId = parseInt(req.params.id, 10);
-  if (isNaN(userId)) { res.status(400).json({ error: "invalid_id" }); return; }
+  const userId = req.params.id;
 
-  await db.delete(userCustomRolesTable).where(eq(userCustomRolesTable.userId, userId));
+  await UserCustomRole.deleteMany({ userId });
 
-  await db.insert(adminLogsTable).values({
+  await AdminLog.create({
     adminId: adminUser.userId,
     adminUsername: adminUser.username,
     action: "remove_custom_role",

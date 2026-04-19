@@ -1,11 +1,25 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq } from "drizzle-orm";
-import { db, usersTable } from "@workspace/db";
+import { User } from "@workspace/db";
 import { RegisterUserBody, LoginUserBody } from "@workspace/api-zod";
 import { signToken, hashPassword, comparePasswords, requireAuth } from "../lib/auth";
 import type { JwtPayload } from "../lib/auth";
 
 const router: IRouter = Router();
+
+function formatUser(user: any) {
+  return {
+    id: user._id.toString(),
+    email: user.email,
+    username: user.username,
+    role: user.role,
+    isBanned: user.isBanned,
+    minecraftUsername: user.minecraftUsername,
+    discordId: user.discordId,
+    discordUsername: user.discordUsername,
+    discordAvatar: user.discordAvatar,
+    createdAt: user.createdAt,
+  };
+}
 
 router.post("/auth/register", async (req: Request, res: Response): Promise<void> => {
   const parsed = RegisterUserBody.safeParse(req.body);
@@ -16,44 +30,35 @@ router.post("/auth/register", async (req: Request, res: Response): Promise<void>
 
   const { email, password, username, minecraftUsername } = parsed.data;
 
-  const existing = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
-  if (existing.length > 0) {
+  const existingEmail = await User.findOne({ email: email.toLowerCase() });
+  if (existingEmail) {
     res.status(400).json({ error: "email_taken", message: "Email already registered" });
     return;
   }
 
-  const existingUsername = await db.select().from(usersTable).where(eq(usersTable.username, username)).limit(1);
-  if (existingUsername.length > 0) {
+  const existingUsername = await User.findOne({ username });
+  if (existingUsername) {
     res.status(400).json({ error: "username_taken", message: "Username already taken" });
     return;
   }
 
   const passwordHash = await hashPassword(password);
-  const [user] = await db.insert(usersTable).values({
-    email,
+  const user = await User.create({
+    email: email.toLowerCase(),
     username,
     passwordHash,
     minecraftUsername: minecraftUsername ?? null,
     role: "user",
     isBanned: false,
-  }).returning();
-
-  const token = signToken({ userId: user.id, email: user.email, username: user.username, role: user.role });
-  res.status(201).json({
-    token,
-    user: {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      role: user.role,
-      isBanned: user.isBanned,
-      minecraftUsername: user.minecraftUsername,
-      discordId: user.discordId,
-      discordUsername: user.discordUsername,
-      discordAvatar: user.discordAvatar,
-      createdAt: user.createdAt,
-    }
   });
+
+  const token = signToken({
+    userId: user._id.toString(),
+    email: user.email,
+    username: user.username,
+    role: user.role,
+  });
+  res.status(201).json({ token, user: formatUser(user) });
 });
 
 router.post("/auth/login", async (req: Request, res: Response): Promise<void> => {
@@ -64,7 +69,7 @@ router.post("/auth/login", async (req: Request, res: Response): Promise<void> =>
   }
 
   const { email, password } = parsed.data;
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+  const user = await User.findOne({ email: email.toLowerCase() });
 
   if (!user || !user.passwordHash) {
     res.status(401).json({ error: "invalid_credentials", message: "Invalid email or password" });
@@ -82,43 +87,23 @@ router.post("/auth/login", async (req: Request, res: Response): Promise<void> =>
     return;
   }
 
-  const token = signToken({ userId: user.id, email: user.email, username: user.username, role: user.role });
-  res.json({
-    token,
-    user: {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      role: user.role,
-      isBanned: user.isBanned,
-      minecraftUsername: user.minecraftUsername,
-      discordId: user.discordId,
-      discordUsername: user.discordUsername,
-      discordAvatar: user.discordAvatar,
-      createdAt: user.createdAt,
-    }
+  const token = signToken({
+    userId: user._id.toString(),
+    email: user.email,
+    username: user.username,
+    role: user.role,
   });
+  res.json({ token, user: formatUser(user) });
 });
 
 router.get("/auth/me", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const authUser = (req as Request & { user?: JwtPayload }).user!;
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, authUser.userId)).limit(1);
+  const user = await User.findById(authUser.userId);
   if (!user) {
     res.status(404).json({ error: "not_found", message: "User not found" });
     return;
   }
-  res.json({
-    id: user.id,
-    email: user.email,
-    username: user.username,
-    role: user.role,
-    isBanned: user.isBanned,
-    minecraftUsername: user.minecraftUsername,
-    discordId: user.discordId,
-    discordUsername: user.discordUsername,
-    discordAvatar: user.discordAvatar,
-    createdAt: user.createdAt,
-  });
+  res.json(formatUser(user));
 });
 
 router.post("/auth/logout", (_req: Request, res: Response): Promise<void> => {

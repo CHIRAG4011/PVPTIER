@@ -1,6 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq } from "drizzle-orm";
-import { db, siteSettingsTable } from "@workspace/db";
+import { SiteSetting } from "@workspace/db";
 import { requireAdmin } from "../lib/auth";
 import type { JwtPayload } from "../lib/auth";
 
@@ -24,16 +23,16 @@ const DEFAULT_SETTINGS: Record<string, string> = {
 };
 
 router.get("/settings/public", async (_req: Request, res: Response): Promise<void> => {
-  const rows = await db.select().from(siteSettingsTable);
+  const rows = await SiteSetting.find();
   const settings: Record<string, string> = { ...DEFAULT_SETTINGS };
-  rows.forEach(r => { settings[r.key] = r.value; });
+  rows.forEach((r: any) => { settings[r.key] = r.value; });
   res.json(settings);
 });
 
 router.get("/admin/settings", requireAdmin, async (_req: Request, res: Response): Promise<void> => {
-  const rows = await db.select().from(siteSettingsTable);
+  const rows = await SiteSetting.find();
   const settings: Record<string, string> = { ...DEFAULT_SETTINGS };
-  rows.forEach(r => { settings[r.key] = r.value; });
+  rows.forEach((r: any) => { settings[r.key] = r.value; });
   res.json(settings);
 });
 
@@ -41,16 +40,17 @@ router.patch("/admin/settings", requireAdmin, async (req: Request, res: Response
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
   const updates = req.body as Record<string, string>;
 
-  for (const [key, value] of Object.entries(updates)) {
-    if (typeof value !== "string") continue;
-    const existing = await db.select().from(siteSettingsTable).where(eq(siteSettingsTable.key, key)).limit(1);
-    if (existing.length > 0) {
-      await db.update(siteSettingsTable).set({ value, updatedBy: adminUser.userId, updatedAt: new Date() }).where(eq(siteSettingsTable.key, key));
-    } else {
-      await db.insert(siteSettingsTable).values({ key, value, updatedBy: adminUser.userId });
-    }
-  }
+  const ops = Object.entries(updates)
+    .filter(([, value]) => typeof value === "string")
+    .map(([key, value]) =>
+      SiteSetting.findOneAndUpdate(
+        { key },
+        { key, value, updatedBy: adminUser.userId },
+        { upsert: true, new: true }
+      )
+    );
 
+  await Promise.all(ops);
   res.json({ success: true, message: "Settings updated" });
 });
 

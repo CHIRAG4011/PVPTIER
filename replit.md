@@ -11,8 +11,8 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
 - **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
+- **Database**: MongoDB Atlas + Mongoose
+- **Validation**: Zod (`zod/v4`)
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
 
@@ -20,11 +20,11 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 
 A full-stack Minecraft PvP ranking platform with:
 - **Frontend** (`artifacts/pvp-leaderboard`): React + Vite + TailwindCSS, includes public leaderboard, player profiles (Minecraft skin via mc-heads.net), match submissions, support tickets, announcements, and a full admin panel.
-- **API Server** (`artifacts/api-server`): Express 5 + Drizzle ORM + PostgreSQL, JWT auth, Discord OAuth2 placeholder, role-based access control.
+- **API Server** (`artifacts/api-server`): Express 5 + Mongoose + MongoDB Atlas, JWT auth, role-based access control.
 - **Admin Panel**: Routes under `/admin/*`, requires `admin`/`superadmin`/`moderator` role. Covers dashboard analytics, user management, player stat editing, submission review, ticket management, season control, announcements, audit logs, site settings, and role management.
 
 ### Admin Access
-Default admin account: `admin@pvp.gg` / `admin123456` (role: superadmin)
+Default admin account: `admin@pvp.gg` / `Admin1234!` (role: superadmin)
 To create additional admins, register normally then update role directly in DB.
 
 ### Features Added (Latest Session)
@@ -37,8 +37,15 @@ To create additional admins, register normally then update role directly in DB.
 - **Site Settings Context**: `SiteSettingsProvider` wraps the entire app. All components can call `useSiteSettings()` to access dynamic values.
 - **78 Permissions**: Defined in `artifacts/api-server/src/lib/permissions.ts`. Keys follow pattern `category.action`.
 
-### DB Tables
-- `users`, `players`, `matches`, `gamemode_stats`, `submissions`, `tickets`, `ticket_replies`, `announcements`, `seasons`, `admin_logs`, `site_settings`, `custom_roles`, `user_custom_roles`, `password_resets`
+### MongoDB Collections
+- `users`, `players` (with embedded `gamemodeStats`), `matches`, `submissions`, `tickets`, `ticketreplies`, `announcements`, `seasons`, `adminlogs`, `sitesettings`, `customroles`, `usercustomroles`, `passwordresets`
+- Models in `lib/db/src/models/`. All expose `id` (string ObjectId) in API responses.
+- Connection string stored in `MONGODB_URI` env var (MongoDB Atlas cluster).
+
+### Vercel Deployment
+See `DEPLOYMENT.md` for full Vercel deployment guide. Deploy as two separate Vercel projects:
+1. API: root directory = `artifacts/api-server`
+2. Frontend: root directory = `artifacts/pvp-leaderboard`, set `VITE_API_URL` to the API's Vercel URL
 
 ### Known Issues Fixed
 - Database schema was not pushed on first boot — fixed, now tables exist
@@ -54,7 +61,7 @@ To create additional admins, register normally then update role directly in DB.
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- `POST /api/admin/seed` — seed MongoDB with 20 test players + admin account
 - `pnpm --filter @workspace/api-server run dev` — run API server locally
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.

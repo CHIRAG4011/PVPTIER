@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 const JWT_SECRET = process.env.SESSION_SECRET || "pvp-leaderboard-secret-key-2024";
 
 export interface JwtPayload {
-  userId: number;
+  userId: string;
   email: string;
   username: string;
   role: string;

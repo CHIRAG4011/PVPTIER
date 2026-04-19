@@ -1,9 +1,9 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, desc } from "drizzle-orm";
-import { db, announcementsTable } from "@workspace/db";
+import { Announcement } from "@workspace/db";
 import { CreateAnnouncementBody, ListAnnouncementsQueryParams } from "@workspace/api-zod";
 import { requireAdmin, optionalAuth } from "../lib/auth";
 import type { JwtPayload } from "../lib/auth";
+import mongoose from "mongoose";
 
 const router: IRouter = Router();
 
@@ -13,18 +13,16 @@ router.get("/announcements", optionalAuth, async (req: Request, res: Response): 
   const limit = 20;
   const offset = (page - 1) * limit;
 
-  const announcements = await db.select().from(announcementsTable)
-    .orderBy(desc(announcementsTable.isPinned), desc(announcementsTable.createdAt))
-    .limit(limit)
-    .offset(offset);
-
-  const all = await db.select().from(announcementsTable);
+  const [announcements, total] = await Promise.all([
+    Announcement.find().sort({ isPinned: -1, createdAt: -1 }).skip(offset).limit(limit),
+    Announcement.countDocuments(),
+  ]);
 
   res.json({
-    announcements,
-    total: all.length,
+    announcements: announcements.map((a: any) => ({ ...a.toJSON(), id: a._id.toString() })),
+    total,
     page,
-    totalPages: Math.ceil(all.length / limit),
+    totalPages: Math.ceil(total / limit),
   });
 });
 
@@ -36,27 +34,26 @@ router.post("/announcements", requireAdmin, async (req: Request, res: Response):
     return;
   }
 
-  const [announcement] = await db.insert(announcementsTable).values({
+  const announcement = await Announcement.create({
     title: parsed.data.title,
     content: parsed.data.content,
     type: parsed.data.type,
     authorId: user.userId,
     authorUsername: user.username,
     isPinned: parsed.data.isPinned ?? false,
-  }).returning();
+  });
 
-  res.status(201).json(announcement);
+  res.status(201).json({ ...announcement.toJSON(), id: announcement._id.toString() });
 });
 
 router.delete("/announcements/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
-  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(rawId, 10);
-  if (isNaN(id)) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid announcement ID" });
     return;
   }
 
-  await db.delete(announcementsTable).where(eq(announcementsTable.id, id));
+  await Announcement.findByIdAndDelete(id);
   res.json({ success: true, message: "Announcement deleted" });
 });
 

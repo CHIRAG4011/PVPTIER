@@ -1,9 +1,9 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, desc } from "drizzle-orm";
-import { db, submissionsTable, playersTable, adminLogsTable } from "@workspace/db";
+import { Submission, Player, AdminLog } from "@workspace/db";
 import { CreateSubmissionBody, ListSubmissionsQueryParams } from "@workspace/api-zod";
 import { requireAuth, requireAdmin } from "../lib/auth";
 import type { JwtPayload } from "../lib/auth";
+import mongoose from "mongoose";
 
 const router: IRouter = Router();
 
@@ -16,7 +16,7 @@ router.post("/submissions", requireAuth, async (req: Request, res: Response): Pr
   }
 
   const { opponentUsername, gamemode, result, evidence } = parsed.data;
-  const [submission] = await db.insert(submissionsTable).values({
+  const submission = await Submission.create({
     submitterId: user.userId,
     submitterUsername: user.username,
     opponentUsername,
@@ -24,9 +24,9 @@ router.post("/submissions", requireAuth, async (req: Request, res: Response): Pr
     result,
     status: "pending",
     evidence: evidence ?? null,
-  }).returning();
+  });
 
-  res.status(201).json(submission);
+  res.status(201).json({ ...submission.toJSON(), id: submission._id.toString() });
 });
 
 router.get("/submissions", requireAdmin, async (req: Request, res: Response): Promise<void> => {
@@ -36,52 +36,46 @@ router.get("/submissions", requireAdmin, async (req: Request, res: Response): Pr
   const offset = (page - 1) * limit;
   const status = parsed.success ? parsed.data.status : undefined;
 
-  const where = status ? eq(submissionsTable.status, status as "pending" | "approved" | "rejected") : undefined;
+  const filter: any = {};
+  if (status) filter.status = status;
 
-  const submissions = where
-    ? await db.select().from(submissionsTable).where(where).orderBy(desc(submissionsTable.createdAt)).limit(limit).offset(offset)
-    : await db.select().from(submissionsTable).orderBy(desc(submissionsTable.createdAt)).limit(limit).offset(offset);
-
-  const all = where
-    ? await db.select().from(submissionsTable).where(where)
-    : await db.select().from(submissionsTable);
+  const [submissions, total] = await Promise.all([
+    Submission.find(filter).sort({ createdAt: -1 }).skip(offset).limit(limit),
+    Submission.countDocuments(filter),
+  ]);
 
   res.json({
-    submissions,
-    total: all.length,
+    submissions: submissions.map((s: any) => ({ ...s.toJSON(), id: s._id.toString() })),
+    total,
     page,
-    totalPages: Math.ceil(all.length / limit),
+    totalPages: Math.ceil(total / limit),
   });
 });
 
 router.post("/submissions/:id/approve", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
-  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(rawId, 10);
-  if (isNaN(id)) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid submission ID" });
     return;
   }
 
-  const [submission] = await db.select().from(submissionsTable).where(eq(submissionsTable.id, id));
+  const submission = await Submission.findById(id);
   if (!submission) {
     res.status(404).json({ error: "not_found", message: "Submission not found" });
     return;
   }
 
-  await db.update(submissionsTable).set({ status: "approved", reviewedBy: adminUser.userId }).where(eq(submissionsTable.id, id));
+  await Submission.findByIdAndUpdate(id, { status: "approved", reviewedBy: adminUser.userId });
 
-  const [winner] = await db.select().from(playersTable).where(eq(playersTable.minecraftUsername, submission.submitterUsername));
+  const winner = await Player.findOne({ minecraftUsername: submission.submitterUsername });
   if (winner) {
-    const eloChange = 25;
-    await db.update(playersTable).set({
-      wins: winner.wins + 1,
-      elo: winner.elo + eloChange,
-      winStreak: winner.winStreak + 1,
-    }).where(eq(playersTable.id, winner.id));
+    await Player.findByIdAndUpdate(winner._id, {
+      $inc: { wins: 1, elo: 25, winStreak: 1 },
+    });
   }
 
-  await db.insert(adminLogsTable).values({
+  await AdminLog.create({
     adminId: adminUser.userId,
     adminUsername: adminUser.username,
     action: "approve_submission",
@@ -94,16 +88,15 @@ router.post("/submissions/:id/approve", requireAdmin, async (req: Request, res: 
 
 router.post("/submissions/:id/reject", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
-  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(rawId, 10);
-  if (isNaN(id)) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid submission ID" });
     return;
   }
 
-  await db.update(submissionsTable).set({ status: "rejected", reviewedBy: adminUser.userId }).where(eq(submissionsTable.id, id));
+  await Submission.findByIdAndUpdate(id, { status: "rejected", reviewedBy: adminUser.userId });
 
-  await db.insert(adminLogsTable).values({
+  await AdminLog.create({
     adminId: adminUser.userId,
     adminUsername: adminUser.username,
     action: "reject_submission",

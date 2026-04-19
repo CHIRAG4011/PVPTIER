@@ -1,6 +1,10 @@
 import { createContext, useContext, ReactNode, useEffect, useState } from "react";
-import { useGetMe, setAuthTokenGetter } from "@workspace/api-client-react";
+import { useGetMe, setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
 import type { User } from "@workspace/api-client-react";
+
+// Support external API URL for Vercel / separate deployments
+const apiUrl = import.meta.env.VITE_API_URL;
+if (apiUrl) setBaseUrl(apiUrl);
 
 // Setup custom-fetch to use our token
 setAuthTokenGetter(() => localStorage.getItem("pvp_token"));

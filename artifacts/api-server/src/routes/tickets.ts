@@ -1,9 +1,9 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, desc, and } from "drizzle-orm";
-import { db, ticketsTable, ticketRepliesTable } from "@workspace/db";
+import { Ticket, TicketReply } from "@workspace/db";
 import { CreateTicketBody, ListTicketsQueryParams, ReplyToTicketBody } from "@workspace/api-zod";
 import { requireAuth, requireAdmin } from "../lib/auth";
 import type { JwtPayload } from "../lib/auth";
+import mongoose from "mongoose";
 
 const router: IRouter = Router();
 
@@ -17,31 +17,20 @@ router.get("/tickets", requireAuth, async (req: Request, res: Response): Promise
 
   const isAdmin = ["admin", "superadmin", "moderator"].includes(user.role);
 
-  const buildWhere = () => {
-    if (isAdmin) {
-      return status ? eq(ticketsTable.status, status as "open" | "pending" | "closed") : undefined;
-    }
-    if (status) {
-      return and(eq(ticketsTable.userId, user.userId), eq(ticketsTable.status, status as "open" | "pending" | "closed"));
-    }
-    return eq(ticketsTable.userId, user.userId);
-  };
+  const filter: any = {};
+  if (!isAdmin) filter.userId = user.userId;
+  if (status) filter.status = status;
 
-  const where = buildWhere();
-
-  const tickets = where
-    ? await db.select().from(ticketsTable).where(where).orderBy(desc(ticketsTable.createdAt)).limit(limit).offset(offset)
-    : await db.select().from(ticketsTable).orderBy(desc(ticketsTable.createdAt)).limit(limit).offset(offset);
-
-  const allTickets = where
-    ? await db.select().from(ticketsTable).where(where)
-    : await db.select().from(ticketsTable);
+  const [tickets, total] = await Promise.all([
+    Ticket.find(filter).sort({ createdAt: -1 }).skip(offset).limit(limit),
+    Ticket.countDocuments(filter),
+  ]);
 
   res.json({
-    tickets,
-    total: allTickets.length,
+    tickets: tickets.map((t: any) => ({ ...t.toJSON(), id: t._id.toString() })),
+    total,
     page,
-    totalPages: Math.ceil(allTickets.length / limit),
+    totalPages: Math.ceil(total / limit),
   });
 });
 
@@ -54,18 +43,18 @@ router.post("/tickets", requireAuth, async (req: Request, res: Response): Promis
   }
 
   const { category, subject, message, priority } = parsed.data;
-  const [ticket] = await db.insert(ticketsTable).values({
+  const ticket = await Ticket.create({
     userId: user.userId,
     username: user.username,
     category,
     subject,
     status: "open",
     priority: priority ?? "medium",
-  }).returning();
+  });
 
   if (message) {
-    await db.insert(ticketRepliesTable).values({
-      ticketId: ticket.id,
+    await TicketReply.create({
+      ticketId: ticket._id.toString(),
       userId: user.userId,
       username: user.username,
       message,
@@ -73,19 +62,18 @@ router.post("/tickets", requireAuth, async (req: Request, res: Response): Promis
     });
   }
 
-  res.status(201).json(ticket);
+  res.status(201).json({ ...ticket.toJSON(), id: ticket._id.toString() });
 });
 
 router.get("/tickets/:id", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = (req as Request & { user?: JwtPayload }).user!;
-  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(rawId, 10);
-  if (isNaN(id)) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid ticket ID" });
     return;
   }
 
-  const [ticket] = await db.select().from(ticketsTable).where(eq(ticketsTable.id, id));
+  const ticket = await Ticket.findById(id);
   if (!ticket) {
     res.status(404).json({ error: "not_found", message: "Ticket not found" });
     return;
@@ -97,16 +85,19 @@ router.get("/tickets/:id", requireAuth, async (req: Request, res: Response): Pro
     return;
   }
 
-  const replies = await db.select().from(ticketRepliesTable).where(eq(ticketRepliesTable.ticketId, id)).orderBy(ticketRepliesTable.createdAt);
+  const replies = await TicketReply.find({ ticketId: id }).sort({ createdAt: 1 });
 
-  res.json({ ...ticket, replies });
+  res.json({
+    ...ticket.toJSON(),
+    id: ticket._id.toString(),
+    replies: replies.map((r: any) => ({ ...r.toJSON(), id: r._id.toString() })),
+  });
 });
 
 router.post("/tickets/:id/reply", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = (req as Request & { user?: JwtPayload }).user!;
-  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(rawId, 10);
-  if (isNaN(id)) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid ticket ID" });
     return;
   }
@@ -117,7 +108,7 @@ router.post("/tickets/:id/reply", requireAuth, async (req: Request, res: Respons
     return;
   }
 
-  const [ticket] = await db.select().from(ticketsTable).where(eq(ticketsTable.id, id));
+  const ticket = await Ticket.findById(id);
   if (!ticket) {
     res.status(404).json({ error: "not_found", message: "Ticket not found" });
     return;
@@ -129,31 +120,30 @@ router.post("/tickets/:id/reply", requireAuth, async (req: Request, res: Respons
     return;
   }
 
-  const [reply] = await db.insert(ticketRepliesTable).values({
+  const reply = await TicketReply.create({
     ticketId: id,
     userId: user.userId,
     username: user.username,
     message: parsed.data.message,
     isAdmin,
-  }).returning();
+  });
 
   if (isAdmin) {
-    await db.update(ticketsTable).set({ status: "pending", updatedAt: new Date() }).where(eq(ticketsTable.id, id));
+    await Ticket.findByIdAndUpdate(id, { status: "pending" });
   }
 
-  res.status(201).json(reply);
+  res.status(201).json({ ...reply.toJSON(), id: reply._id.toString() });
 });
 
 router.post("/tickets/:id/close", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = (req as Request & { user?: JwtPayload }).user!;
-  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(rawId, 10);
-  if (isNaN(id)) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid ticket ID" });
     return;
   }
 
-  const [ticket] = await db.select().from(ticketsTable).where(eq(ticketsTable.id, id));
+  const ticket = await Ticket.findById(id);
   if (!ticket) {
     res.status(404).json({ error: "not_found", message: "Ticket not found" });
     return;
@@ -165,7 +155,7 @@ router.post("/tickets/:id/close", requireAuth, async (req: Request, res: Respons
     return;
   }
 
-  await db.update(ticketsTable).set({ status: "closed", updatedAt: new Date() }).where(eq(ticketsTable.id, id));
+  await Ticket.findByIdAndUpdate(id, { status: "closed" });
   res.json({ success: true, message: "Ticket closed" });
 });
 

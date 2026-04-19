@@ -1,6 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq } from "drizzle-orm";
-import { db, usersTable, playersTable, matchesTable, gamemodeStatsTable } from "@workspace/db";
+import { User, Player, Match } from "@workspace/db";
 import { hashPassword } from "../lib/auth";
 
 const router: IRouter = Router();
@@ -35,49 +34,61 @@ const FAKE_PLAYERS = [
 router.post("/admin/seed", async (req: Request, res: Response): Promise<void> => {
   const { force } = req.body;
 
-  // Always ensure a superadmin account exists regardless of seed state
   const adminPasswordHash = await hashPassword("Admin1234!");
   try {
-    const existing = await db.select().from(usersTable).where(eq(usersTable.email, "admin@pvp.gg")).limit(1);
-    if (existing.length === 0) {
-      await db.insert(usersTable).values({
+    await User.findOneAndUpdate(
+      { email: "admin@pvp.gg" },
+      {
         email: "admin@pvp.gg",
         username: "Admin",
         passwordHash: adminPasswordHash,
         role: "superadmin",
         isBanned: false,
-      });
-    } else {
-      await db.update(usersTable).set({ role: "superadmin", passwordHash: adminPasswordHash }).where(eq(usersTable.email, "admin@pvp.gg"));
-    }
+      },
+      { upsert: true }
+    );
   } catch {}
 
-  const existingPlayers = await db.select().from(playersTable).limit(1);
-  if (existingPlayers.length > 0 && !force) {
-    res.status(400).json({ error: "already_seeded", message: "Database already has players. Pass force=true to re-seed.", adminCreated: true });
+  const existingPlayer = await Player.findOne();
+  if (existingPlayer && !force) {
+    res.status(400).json({
+      error: "already_seeded",
+      message: "Database already has players. Pass force=true to re-seed.",
+      adminCreated: true,
+    });
     return;
   }
 
+  if (force) {
+    await Promise.all([Player.deleteMany({}), Match.deleteMany({})]);
+  }
+
   const passwordHash = await hashPassword("Test1234!");
-  const createdUsers: number[] = [];
 
-  for (let i = 0; i < FAKE_PLAYERS.length; i++) {
-    const p = FAKE_PLAYERS[i];
-    const existing = await db.select().from(usersTable).limit(1);
-    
+  for (const p of FAKE_PLAYERS) {
     try {
-      const [user] = await db.insert(usersTable).values({
-        email: `${p.ign.toLowerCase().replace(/[^a-z0-9]/g, "")}@pvptiers.gg`,
-        username: p.ign,
-        passwordHash,
-        role: "user",
-        minecraftUsername: p.ign,
-        isBanned: false,
-      }).returning();
-      createdUsers.push(user.id);
+      const user = await User.findOneAndUpdate(
+        { email: `${p.ign.toLowerCase().replace(/[^a-z0-9]/g, "")}@pvptiers.gg` },
+        {
+          email: `${p.ign.toLowerCase().replace(/[^a-z0-9]/g, "")}@pvptiers.gg`,
+          username: p.ign,
+          passwordHash,
+          role: "user",
+          minecraftUsername: p.ign,
+          isBanned: false,
+        },
+        { upsert: true, new: true }
+      );
 
-      const [player] = await db.insert(playersTable).values({
-        userId: user.id,
+      const gamemodeStats = GAMEMODES.map(gm => ({
+        gamemode: gm,
+        wins: Math.floor(p.wins * Math.random() * 0.4),
+        losses: Math.floor(p.losses * Math.random() * 0.4),
+        elo: 800 + Math.floor(Math.random() * 600),
+      }));
+
+      await Player.create({
+        userId: user!._id.toString(),
         minecraftUsername: p.ign,
         tier: p.tier as typeof TIERS[number],
         elo: p.elo,
@@ -86,28 +97,18 @@ router.post("/admin/seed", async (req: Request, res: Response): Promise<void> =>
         winStreak: Math.floor(Math.random() * 10),
         region: REGIONS[Math.floor(Math.random() * REGIONS.length)],
         discordUsername: `${p.ign}#${Math.floor(1000 + Math.random() * 9000)}`,
-      }).returning();
-
-      for (const gm of GAMEMODES) {
-        await db.insert(gamemodeStatsTable).values({
-          playerId: player.id,
-          gamemode: gm,
-          wins: Math.floor(p.wins * Math.random() * 0.4),
-          losses: Math.floor(p.losses * Math.random() * 0.4),
-          elo: 800 + Math.floor(Math.random() * 600),
-        });
-      }
-    } catch {
-    }
+        gamemodeStats,
+      });
+    } catch {}
   }
 
-  const allPlayers = await db.select().from(playersTable).limit(10);
+  const allPlayers = await Player.find().limit(20);
   if (allPlayers.length >= 2) {
     for (let i = 0; i < Math.min(30, allPlayers.length - 1); i++) {
       const winnerIdx = Math.floor(Math.random() * allPlayers.length);
       let loserIdx = Math.floor(Math.random() * allPlayers.length);
       while (loserIdx === winnerIdx) loserIdx = Math.floor(Math.random() * allPlayers.length);
-      
+
       const winner = allPlayers[winnerIdx];
       const loser = allPlayers[loserIdx];
       const gm = GAMEMODES[Math.floor(Math.random() * GAMEMODES.length)];
@@ -115,9 +116,9 @@ router.post("/admin/seed", async (req: Request, res: Response): Promise<void> =>
       const playedAt = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
 
       try {
-        await db.insert(matchesTable).values({
-          winnerId: winner.id,
-          loserId: loser.id,
+        await Match.create({
+          winnerId: winner._id.toString(),
+          loserId: loser._id.toString(),
           winnerUsername: winner.minecraftUsername,
           loserUsername: loser.minecraftUsername,
           gamemode: gm,

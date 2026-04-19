@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, ilike, desc, and } from "drizzle-orm";
-import { db, playersTable, gamemodeStatsTable, matchesTable } from "@workspace/db";
-import { ListPlayersQueryParams, GetPlayerParams, GetPlayerStatsParams, GetPlayerMatchesParams, GetPlayerMatchesQueryParams } from "@workspace/api-zod";
+import { Player } from "@workspace/db";
+import { ListPlayersQueryParams } from "@workspace/api-zod";
+import mongoose from "mongoose";
 
 const router: IRouter = Router();
 
@@ -16,9 +16,9 @@ function calcWinRate(wins: number, losses: number): number {
   return Math.round((wins / total) * 10000) / 100;
 }
 
-function formatPlayer(p: typeof playersTable.$inferSelect) {
+function formatPlayer(p: any) {
   return {
-    id: p.id,
+    id: p._id.toString(),
     userId: p.userId,
     minecraftUsername: p.minecraftUsername,
     minecraftUuid: p.minecraftUuid,
@@ -41,75 +41,45 @@ router.get("/players", async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  const { gamemode: _gamemode, tier, search, page = 1, limit = 20 } = parsed.data;
+  const { tier, search, page = 1, limit = 20 } = parsed.data;
   const offset = (page - 1) * limit;
 
-  let query = db.select().from(playersTable).orderBy(desc(playersTable.elo));
+  const filter: any = {};
+  if (tier) filter.tier = tier;
+  if (search) filter.minecraftUsername = { $regex: search, $options: "i" };
 
-  if (tier) {
-    const filtered = await db.select().from(playersTable).where(and(
-      eq(playersTable.tier, tier as "LT1"),
-      search ? ilike(playersTable.minecraftUsername, `%${search}%`) : undefined
-    )).orderBy(desc(playersTable.elo)).limit(limit).offset(offset);
-
-    const total = filtered.length;
-    res.json({
-      players: filtered.map(formatPlayer),
-      total: total + offset,
-      page,
-      totalPages: Math.ceil((total + offset) / limit),
-    });
-    return;
-  }
-
-  if (search) {
-    const filtered = await db.select().from(playersTable)
-      .where(ilike(playersTable.minecraftUsername, `%${search}%`))
-      .orderBy(desc(playersTable.elo)).limit(limit).offset(offset);
-
-    res.json({
-      players: filtered.map(formatPlayer),
-      total: filtered.length + offset,
-      page,
-      totalPages: Math.ceil((filtered.length + offset) / limit),
-    });
-    return;
-  }
-
-  const players = await query.limit(limit).offset(offset);
-  const allPlayers = await db.select().from(playersTable);
+  const [players, total] = await Promise.all([
+    Player.find(filter).sort({ elo: -1 }).skip(offset).limit(limit),
+    Player.countDocuments(filter),
+  ]);
 
   res.json({
     players: players.map(formatPlayer),
-    total: allPlayers.length,
+    total,
     page,
-    totalPages: Math.ceil(allPlayers.length / limit),
+    totalPages: Math.ceil(total / limit),
   });
 });
 
 router.get("/players/:id", async (req: Request, res: Response): Promise<void> => {
-  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(rawId, 10);
-  if (isNaN(id)) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid player ID" });
     return;
   }
 
-  const [player] = await db.select().from(playersTable).where(eq(playersTable.id, id));
+  const player = await Player.findById(id);
   if (!player) {
     res.status(404).json({ error: "not_found", message: "Player not found" });
     return;
   }
 
-  const gamemodeStats = await db.select().from(gamemodeStatsTable).where(eq(gamemodeStatsTable.playerId, id));
-  const recentMatches = await db.select().from(matchesTable)
-    .where(eq(matchesTable.winnerId, id))
-    .orderBy(desc(matchesTable.playedAt))
-    .limit(10);
+  const { Match } = await import("@workspace/db");
+  const recentMatches = await Match.find({ winnerId: id }).sort({ playedAt: -1 }).limit(10);
 
   res.json({
     ...formatPlayer(player),
-    gamemodeStats: gamemodeStats.map(gs => ({
+    gamemodeStats: (player.gamemodeStats ?? []).map((gs: any) => ({
       gamemode: gs.gamemode,
       wins: gs.wins,
       losses: gs.losses,
@@ -117,21 +87,34 @@ router.get("/players/:id", async (req: Request, res: Response): Promise<void> =>
       kd: calcKd(gs.wins, gs.losses),
       winRate: calcWinRate(gs.wins, gs.losses),
     })),
-    recentMatches,
+    recentMatches: recentMatches.map((m: any) => ({
+      id: m._id.toString(),
+      winnerId: m.winnerId,
+      loserId: m.loserId,
+      winnerUsername: m.winnerUsername,
+      loserUsername: m.loserUsername,
+      gamemode: m.gamemode,
+      eloChange: m.eloChange,
+      playedAt: m.playedAt,
+    })),
   });
 });
 
 router.get("/players/:id/stats", async (req: Request, res: Response): Promise<void> => {
-  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(rawId, 10);
-  if (isNaN(id)) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid player ID" });
     return;
   }
 
-  const gamemodeStats = await db.select().from(gamemodeStatsTable).where(eq(gamemodeStatsTable.playerId, id));
+  const player = await Player.findById(id);
+  if (!player) {
+    res.status(404).json({ error: "not_found", message: "Player not found" });
+    return;
+  }
+
   res.json({
-    gamemodeStats: gamemodeStats.map(gs => ({
+    gamemodeStats: (player.gamemodeStats ?? []).map((gs: any) => ({
       gamemode: gs.gamemode,
       wins: gs.wins,
       losses: gs.losses,
@@ -143,29 +126,36 @@ router.get("/players/:id/stats", async (req: Request, res: Response): Promise<vo
 });
 
 router.get("/players/:id/matches", async (req: Request, res: Response): Promise<void> => {
-  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(rawId, 10);
-  if (isNaN(id)) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid player ID" });
     return;
   }
 
-  const qParsed = GetPlayerMatchesQueryParams.safeParse(req.query);
-  const page = qParsed.success ? (qParsed.data.page ?? 1) : 1;
-  const limit = qParsed.success ? (qParsed.data.limit ?? 20) : 20;
+  const page = parseInt(String(req.query.page ?? 1), 10);
+  const limit = parseInt(String(req.query.limit ?? 20), 10);
   const offset = (page - 1) * limit;
 
-  const matches = await db.select().from(matchesTable)
-    .where(eq(matchesTable.winnerId, id))
-    .orderBy(desc(matchesTable.playedAt))
-    .limit(limit)
-    .offset(offset);
+  const { Match } = await import("@workspace/db");
+  const [matches, total] = await Promise.all([
+    Match.find({ $or: [{ winnerId: id }, { loserId: id }] }).sort({ playedAt: -1 }).skip(offset).limit(limit),
+    Match.countDocuments({ $or: [{ winnerId: id }, { loserId: id }] }),
+  ]);
 
   res.json({
-    matches,
-    total: matches.length + offset,
+    matches: matches.map((m: any) => ({
+      id: m._id.toString(),
+      winnerId: m.winnerId,
+      loserId: m.loserId,
+      winnerUsername: m.winnerUsername,
+      loserUsername: m.loserUsername,
+      gamemode: m.gamemode,
+      eloChange: m.eloChange,
+      playedAt: m.playedAt,
+    })),
+    total,
     page,
-    totalPages: Math.ceil((matches.length + offset) / limit),
+    totalPages: Math.ceil(total / limit),
   });
 });
 

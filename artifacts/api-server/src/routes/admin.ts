@@ -1,11 +1,26 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, desc, ilike, and, sql } from "drizzle-orm";
-import { db, usersTable, playersTable, matchesTable, ticketsTable, submissionsTable, adminLogsTable, seasonsTable } from "@workspace/db";
+import { User, Player, Match, Ticket, Submission, AdminLog, Season } from "@workspace/db";
 import { AdminListUsersQueryParams, BanUserBody, UpdateUserRoleBody, AdminUpdatePlayerStatsBody, GetAdminLogsQueryParams, CreateSeasonBody } from "@workspace/api-zod";
 import { requireAdmin } from "../lib/auth";
 import type { JwtPayload } from "../lib/auth";
+import mongoose from "mongoose";
 
 const router: IRouter = Router();
+
+function formatUser(u: any) {
+  return {
+    id: u._id.toString(),
+    email: u.email,
+    username: u.username,
+    role: u.role,
+    isBanned: u.isBanned,
+    minecraftUsername: u.minecraftUsername,
+    discordId: u.discordId,
+    discordUsername: u.discordUsername,
+    discordAvatar: u.discordAvatar,
+    createdAt: u.createdAt,
+  };
+}
 
 router.get("/admin/users", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const parsed = AdminListUsersQueryParams.safeParse(req.query);
@@ -15,47 +30,27 @@ router.get("/admin/users", requireAdmin, async (req: Request, res: Response): Pr
   const search = parsed.success ? parsed.data.search : undefined;
   const role = parsed.success ? parsed.data.role : undefined;
 
-  const buildWhere = () => {
-    const conditions = [];
-    if (search) conditions.push(ilike(usersTable.username, `%${search}%`));
-    if (role) conditions.push(eq(usersTable.role, role as "user" | "moderator" | "admin" | "superadmin"));
-    return conditions.length > 0 ? and(...conditions) : undefined;
-  };
+  const filter: any = {};
+  if (search) filter.username = { $regex: search, $options: "i" };
+  if (role) filter.role = role;
 
-  const where = buildWhere();
-
-  const users = where
-    ? await db.select().from(usersTable).where(where).orderBy(desc(usersTable.createdAt)).limit(limit).offset(offset)
-    : await db.select().from(usersTable).orderBy(desc(usersTable.createdAt)).limit(limit).offset(offset);
-
-  const allUsers = where
-    ? await db.select().from(usersTable).where(where)
-    : await db.select().from(usersTable);
+  const [users, total] = await Promise.all([
+    User.find(filter).sort({ createdAt: -1 }).skip(offset).limit(limit),
+    User.countDocuments(filter),
+  ]);
 
   res.json({
-    users: users.map(u => ({
-      id: u.id,
-      email: u.email,
-      username: u.username,
-      role: u.role,
-      isBanned: u.isBanned,
-      minecraftUsername: u.minecraftUsername,
-      discordId: u.discordId,
-      discordUsername: u.discordUsername,
-      discordAvatar: u.discordAvatar,
-      createdAt: u.createdAt,
-    })),
-    total: allUsers.length,
+    users: users.map(formatUser),
+    total,
     page,
-    totalPages: Math.ceil(allUsers.length / limit),
+    totalPages: Math.ceil(total / limit),
   });
 });
 
 router.post("/admin/users/:id/ban", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
-  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(rawId, 10);
-  if (isNaN(id)) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid user ID" });
     return;
   }
@@ -66,9 +61,9 @@ router.post("/admin/users/:id/ban", requireAdmin, async (req: Request, res: Resp
     return;
   }
 
-  await db.update(usersTable).set({ isBanned: true, banReason: parsed.data.reason }).where(eq(usersTable.id, id));
+  await User.findByIdAndUpdate(id, { isBanned: true, banReason: parsed.data.reason });
 
-  await db.insert(adminLogsTable).values({
+  await AdminLog.create({
     adminId: adminUser.userId,
     adminUsername: adminUser.username,
     action: "ban_user",
@@ -81,16 +76,15 @@ router.post("/admin/users/:id/ban", requireAdmin, async (req: Request, res: Resp
 
 router.post("/admin/users/:id/unban", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
-  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(rawId, 10);
-  if (isNaN(id)) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid user ID" });
     return;
   }
 
-  await db.update(usersTable).set({ isBanned: false, banReason: null }).where(eq(usersTable.id, id));
+  await User.findByIdAndUpdate(id, { isBanned: false, banReason: null });
 
-  await db.insert(adminLogsTable).values({
+  await AdminLog.create({
     adminId: adminUser.userId,
     adminUsername: adminUser.username,
     action: "unban_user",
@@ -103,9 +97,8 @@ router.post("/admin/users/:id/unban", requireAdmin, async (req: Request, res: Re
 
 router.patch("/admin/users/:id/role", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
-  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(rawId, 10);
-  if (isNaN(id)) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid user ID" });
     return;
   }
@@ -116,9 +109,9 @@ router.patch("/admin/users/:id/role", requireAdmin, async (req: Request, res: Re
     return;
   }
 
-  await db.update(usersTable).set({ role: parsed.data.role }).where(eq(usersTable.id, id));
+  await User.findByIdAndUpdate(id, { role: parsed.data.role });
 
-  await db.insert(adminLogsTable).values({
+  await AdminLog.create({
     adminId: adminUser.userId,
     adminUsername: adminUser.username,
     action: "update_role",
@@ -131,9 +124,8 @@ router.patch("/admin/users/:id/role", requireAdmin, async (req: Request, res: Re
 
 router.patch("/admin/players/:id/stats", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
-  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(rawId, 10);
-  if (isNaN(id)) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid player ID" });
     return;
   }
@@ -144,15 +136,15 @@ router.patch("/admin/players/:id/stats", requireAdmin, async (req: Request, res:
     return;
   }
 
-  const updates: Partial<{ elo: number; wins: number; losses: number; tier: "LT1" | "LT2" | "LT3" | "LT4" | "LT5" | "HT1" | "HT2" | "HT3" | "HT4" | "HT5" }> = {};
+  const updates: any = {};
   if (parsed.data.elo !== undefined) updates.elo = parsed.data.elo;
   if (parsed.data.wins !== undefined) updates.wins = parsed.data.wins;
   if (parsed.data.losses !== undefined) updates.losses = parsed.data.losses;
   if (parsed.data.tier !== undefined) updates.tier = parsed.data.tier;
 
-  await db.update(playersTable).set(updates).where(eq(playersTable.id, id));
+  await Player.findByIdAndUpdate(id, updates);
 
-  await db.insert(adminLogsTable).values({
+  await AdminLog.create({
     adminId: adminUser.userId,
     adminUsername: adminUser.username,
     action: "update_player_stats",
@@ -165,27 +157,26 @@ router.patch("/admin/players/:id/stats", requireAdmin, async (req: Request, res:
 
 router.delete("/admin/players/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
-  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(rawId, 10);
-  if (isNaN(id)) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid player ID" });
     return;
   }
 
-  const player = await db.select().from(playersTable).where(eq(playersTable.id, id)).limit(1);
-  if (!player.length) {
+  const player = await Player.findById(id);
+  if (!player) {
     res.status(404).json({ error: "not_found", message: "Player not found" });
     return;
   }
 
-  await db.delete(playersTable).where(eq(playersTable.id, id));
+  await Player.findByIdAndDelete(id);
 
-  await db.insert(adminLogsTable).values({
+  await AdminLog.create({
     adminId: adminUser.userId,
     adminUsername: adminUser.username,
     action: "delete_player",
     target: `player:${id}`,
-    details: `Deleted player: ${player[0].minecraftUsername}`,
+    details: `Deleted player: ${player.minecraftUsername}`,
   });
 
   res.json({ success: true, message: "Player deleted" });
@@ -193,16 +184,15 @@ router.delete("/admin/players/:id", requireAdmin, async (req: Request, res: Resp
 
 router.post("/admin/players/:id/reset", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
-  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(rawId, 10);
-  if (isNaN(id)) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid player ID" });
     return;
   }
 
-  await db.update(playersTable).set({ elo: 1000, wins: 0, losses: 0, winStreak: 0, tier: "LT1" }).where(eq(playersTable.id, id));
+  await Player.findByIdAndUpdate(id, { elo: 1000, wins: 0, losses: 0, winStreak: 0, tier: "LT1" });
 
-  await db.insert(adminLogsTable).values({
+  await AdminLog.create({
     adminId: adminUser.userId,
     adminUsername: adminUser.username,
     action: "reset_player_stats",
@@ -214,35 +204,36 @@ router.post("/admin/players/:id/reset", requireAdmin, async (req: Request, res: 
 });
 
 router.get("/admin/analytics", requireAdmin, async (_req: Request, res: Response): Promise<void> => {
-  const [users, players, matches, tickets, openTickets, pendingSubmissions, bannedUsers] = await Promise.all([
-    db.select().from(usersTable),
-    db.select().from(playersTable),
-    db.select().from(matchesTable),
-    db.select().from(ticketsTable),
-    db.select().from(ticketsTable).where(eq(ticketsTable.status, "open")),
-    db.select().from(submissionsTable).where(eq(submissionsTable.status, "pending")),
-    db.select().from(usersTable).where(eq(usersTable.isBanned, true)),
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const [
+    totalUsers, totalPlayers, totalMatches, totalTickets,
+    openTickets, pendingSubmissions, bannedUsers,
+    newUsersThisWeek, matchesThisWeek,
+    tierCounts, gamemodeCounts,
+  ] = await Promise.all([
+    User.countDocuments(),
+    Player.countDocuments(),
+    Match.countDocuments(),
+    Ticket.countDocuments(),
+    Ticket.countDocuments({ status: "open" }),
+    Submission.countDocuments({ status: "pending" }),
+    User.countDocuments({ isBanned: true }),
+    User.countDocuments({ createdAt: { $gte: oneWeekAgo } }),
+    Match.countDocuments({ playedAt: { $gte: oneWeekAgo } }),
+    Player.aggregate([{ $group: { _id: "$tier", count: { $sum: 1 } } }]),
+    Match.aggregate([{ $group: { _id: "$gamemode", count: { $sum: 1 } } }]),
   ]);
 
-  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const newUsersThisWeek = users.filter(u => u.createdAt > oneWeekAgo).length;
-  const matchesThisWeek = matches.filter(m => m.playedAt > oneWeekAgo).length;
-
-  const tierCounts: Record<string, number> = {};
-  players.forEach(p => {
-    tierCounts[p.tier] = (tierCounts[p.tier] ?? 0) + 1;
-  });
-
+  const tierMap: Record<string, number> = {};
+  tierCounts.forEach((t: any) => { tierMap[t._id] = t.count; });
   const tiers = ["LT1", "LT2", "LT3", "LT4", "LT5", "HT1", "HT2", "HT3", "HT4", "HT5"];
-  const tierBreakdown = tiers.map(tier => ({ tier, count: tierCounts[tier] ?? 0 }));
+  const tierBreakdown = tiers.map(tier => ({ tier, count: tierMap[tier] ?? 0 }));
 
-  const gamemodeCounts: Record<string, number> = {};
-  matches.forEach(m => {
-    gamemodeCounts[m.gamemode] = (gamemodeCounts[m.gamemode] ?? 0) + 1;
-  });
-
+  const gmMap: Record<string, number> = {};
+  gamemodeCounts.forEach((g: any) => { gmMap[g._id] = g.count; });
   const gamemodes = ["sword", "axe", "uhc", "vanilla", "smp", "diapot", "nethpot", "elytra"];
-  const gamemodeBreakdown = gamemodes.map(gamemode => ({ gamemode, matches: gamemodeCounts[gamemode] ?? 0 }));
+  const gamemodeBreakdown = gamemodes.map(gamemode => ({ gamemode, matches: gmMap[gamemode] ?? 0 }));
 
   const activityByDay = [];
   for (let i = 6; i >= 0; i--) {
@@ -250,26 +241,18 @@ router.get("/admin/analytics", requireAdmin, async (_req: Request, res: Response
     const dateStr = date.toISOString().split("T")[0];
     const dayStart = new Date(dateStr);
     const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
-    activityByDay.push({
-      date: dateStr,
-      matches: matches.filter(m => m.playedAt >= dayStart && m.playedAt < dayEnd).length,
-      newUsers: users.filter(u => u.createdAt >= dayStart && u.createdAt < dayEnd).length,
-    });
+    const [dayMatches, dayUsers] = await Promise.all([
+      Match.countDocuments({ playedAt: { $gte: dayStart, $lt: dayEnd } }),
+      User.countDocuments({ createdAt: { $gte: dayStart, $lt: dayEnd } }),
+    ]);
+    activityByDay.push({ date: dateStr, matches: dayMatches, newUsers: dayUsers });
   }
 
   res.json({
-    totalUsers: users.length,
-    totalPlayers: players.length,
-    totalMatches: matches.length,
-    totalTickets: tickets.length,
-    openTickets: openTickets.length,
-    pendingSubmissions: pendingSubmissions.length,
-    bannedUsers: bannedUsers.length,
-    newUsersThisWeek,
-    matchesThisWeek,
-    tierBreakdown,
-    gamemodeBreakdown,
-    activityByDay,
+    totalUsers, totalPlayers, totalMatches, totalTickets,
+    openTickets, pendingSubmissions, bannedUsers,
+    newUsersThisWeek, matchesThisWeek,
+    tierBreakdown, gamemodeBreakdown, activityByDay,
   });
 });
 
@@ -280,27 +263,25 @@ router.get("/admin/logs", requireAdmin, async (req: Request, res: Response): Pro
   const offset = (page - 1) * limit;
   const action = parsed.success ? parsed.data.action : undefined;
 
-  const where = action ? eq(adminLogsTable.action, action) : undefined;
+  const filter: any = {};
+  if (action) filter.action = action;
 
-  const logs = where
-    ? await db.select().from(adminLogsTable).where(where).orderBy(desc(adminLogsTable.createdAt)).limit(limit).offset(offset)
-    : await db.select().from(adminLogsTable).orderBy(desc(adminLogsTable.createdAt)).limit(limit).offset(offset);
-
-  const allLogs = where
-    ? await db.select().from(adminLogsTable).where(where)
-    : await db.select().from(adminLogsTable);
+  const [logs, total] = await Promise.all([
+    AdminLog.find(filter).sort({ createdAt: -1 }).skip(offset).limit(limit),
+    AdminLog.countDocuments(filter),
+  ]);
 
   res.json({
-    logs,
-    total: allLogs.length,
+    logs: logs.map((l: any) => ({ ...l.toJSON(), id: l._id.toString() })),
+    total,
     page,
-    totalPages: Math.ceil(allLogs.length / limit),
+    totalPages: Math.ceil(total / limit),
   });
 });
 
 router.get("/admin/seasons", requireAdmin, async (_req: Request, res: Response): Promise<void> => {
-  const seasons = await db.select().from(seasonsTable).orderBy(desc(seasonsTable.createdAt));
-  res.json({ seasons });
+  const seasons = await Season.find().sort({ createdAt: -1 });
+  res.json({ seasons: seasons.map((s: any) => ({ ...s.toJSON(), id: s._id.toString() })) });
 });
 
 router.post("/admin/seasons", requireAdmin, async (req: Request, res: Response): Promise<void> => {
@@ -311,36 +292,31 @@ router.post("/admin/seasons", requireAdmin, async (req: Request, res: Response):
     return;
   }
 
-  const [season] = await db.insert(seasonsTable).values({
+  const season = await Season.create({
     name: parsed.data.name,
     startDate: new Date(parsed.data.startDate),
     endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : null,
     isActive: true,
-  }).returning();
+  });
 
-  await db.insert(adminLogsTable).values({
+  await AdminLog.create({
     adminId: adminUser.userId,
     adminUsername: adminUser.username,
     action: "create_season",
-    target: `season:${season.id}`,
+    target: `season:${season._id}`,
     details: `Created season: ${season.name}`,
   });
 
-  res.status(201).json(season);
+  res.status(201).json({ ...season.toJSON(), id: season._id.toString() });
 });
 
 router.post("/admin/seasons/:id/reset", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
-  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(rawId, 10);
-  if (isNaN(id)) {
-    res.status(400).json({ error: "invalid_id", message: "Invalid season ID" });
-    return;
-  }
+  const { id } = req.params;
 
-  await db.update(playersTable).set({ elo: 1000, wins: 0, losses: 0, winStreak: 0, tier: "LT1" });
+  await Player.updateMany({}, { elo: 1000, wins: 0, losses: 0, winStreak: 0, tier: "LT1" });
 
-  await db.insert(adminLogsTable).values({
+  await AdminLog.create({
     adminId: adminUser.userId,
     adminUsername: adminUser.username,
     action: "reset_season",
