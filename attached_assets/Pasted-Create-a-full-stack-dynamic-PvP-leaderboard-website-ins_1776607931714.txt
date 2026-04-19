@@ -1,0 +1,142 @@
+Create a full-stack dynamic PvP leaderboard website inspired by the design and theme of mctiers.it. The UI should be dark-themed, modern, minimal, and animated (smooth hover effects, fade transitions, slide-ins, glassmorphism cards).
+
+🎮 Core Features
+🏆 Leaderboard System
+Global leaderboard with ranking system:
+LT1 → LT5 (Low Tier)
+HT1 → HT5 (High Tier)
+Ranking based on:
+ELO system / points
+Wins, losses, win streak
+Gamemodes (as shown in UI cards):
+Sword PvP
+Axe PvP
+UHC
+Vanilla
+SMP
+Dia Pot
+Neth Pot
+Elytra PvP
+Filters:
+By gamemode
+By rank (LT/HT tiers)
+By region/server
+Search players by username
+👤 Player Profile System
+Click on a player → opens detailed profile page:
+Minecraft username + skin (use Mojang API)
+Rank (LT/HT tier)
+Stats (wins, losses, K/D, ELO)
+Match history
+Gamemode-specific stats
+Linked Discord account
+Profile badges
+🔐 Authentication System
+Login & Register:
+Discord OAuth2 login (required)
+Email + password login (Gmail SMTP verification)
+Features:
+Email verification system (OTP or link)
+Forgot password system
+Secure JWT authentication
+Store users in MongoDB
+💬 Full Discord Integration
+Connect Discord account
+Show Discord avatar + username
+Auto join Discord server (provide invite link)
+Roles sync (optional for ranks)
+Display Discord server link on navbar + footer
+🎫 Ticket System (Support System)
+Users can:
+Create support tickets
+Select category (Bug, Report, Appeal, Other)
+Admin panel:
+View all tickets
+Reply / close tickets
+Ticket status (Open, Closed, Pending)
+Real-time updates (WebSocket or polling)
+📝 Forms System
+Player submission form:
+Submit match results
+Report players
+Apply for rank verification
+Admin approval required before updating leaderboard
+⚙️ Admin Panel (25+ Features)
+
+Create a powerful admin dashboard with:
+
+📊 Management
+Manage users
+Manage leaderboard rankings
+Edit player stats manually
+Approve/reject submissions
+Manage gamemodes
+Manage tiers (LT/HT)
+🧑‍💻 Moderation
+Ban/unban users
+Reset stats
+Detect fake submissions
+Logs system (all admin actions)
+🎫 Ticket Control
+View all tickets
+Reply / close / delete tickets
+Assign tickets to admins
+⚙️ Settings
+Website settings (name, logo, theme)
+Discord integration settings
+Email SMTP config (Gmail)
+SFTP config for backups
+📦 Extra Features (to reach 25+)
+Dashboard analytics (charts)
+Notification system
+Role-based admin access
+Dark/light toggle
+Backup & restore (SFTP support)
+API key management
+Announcement system
+Badge system
+Seasonal rankings reset
+Export data (CSV/JSON)
+🗄️ Backend Requirements
+Stack:
+Node.js + Express
+MongoDB (Mongoose)
+Features:
+REST API
+Secure authentication (JWT)
+Rate limiting
+Input validation
+Logging system
+🎨 Frontend Requirements
+Framework: Next.js / React
+Styling:
+TailwindCSS
+Dark theme like mctiers.it
+Components:
+Animated leaderboard cards
+Profile modal/page
+Admin dashboard UI
+Effects:
+Hover glow
+Smooth transitions
+Responsive design (mobile + desktop)
+🌐 Additional Features
+SEO optimized
+Fast loading (lazy loading, caching)
+CDN support
+Clean URL structure
+Error pages (404, 500)
+🔗 Extras
+Add Discord server invite button in navbar
+Add Minecraft profile integration
+Add copy IP button (if server exists)
+Add real-time leaderboard updates
+🎯 Final Goal
+
+Build a clean, scalable, production-ready PvP leaderboard platform that:
+
+Looks like mctiers.it
+Has smooth UI/UX
+Fully integrated with Discord
+Includes advanced admin controls
+Uses MongoDB efficiently
