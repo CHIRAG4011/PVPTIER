@@ -1,6 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "pnpm install && pnpm --filter @workspace/pvp-leaderboard run build",
+  "buildCommand": "pnpm --filter @workspace/pvp-leaderboard run build",
+  "outputDirectory": "public",
   "rewrites": [
     {
       "source": "/api/:path*",
