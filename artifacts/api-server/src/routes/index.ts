@@ -1,17 +1,17 @@
 import { Router, type IRouter } from "express";
-import healthRouter from "./health";
-import authRouter from "./auth";
-import playersRouter from "./players";
-import leaderboardRouter from "./leaderboard";
-import submissionsRouter from "./submissions";
-import ticketsRouter from "./tickets";
-import adminRouter from "./admin";
-import announcementsRouter from "./announcements";
-import statsRouter from "./stats";
-import settingsRouter from "./settings";
-import rolesRouter from "./roles";
-import seedRouter from "./seed";
-import profileRouter from "./profile";
+import healthRouter from "./health.js";
+import authRouter from "./auth.js";
+import playersRouter from "./players.js";
+import leaderboardRouter from "./leaderboard.js";
+import submissionsRouter from "./submissions.js";
+import ticketsRouter from "./tickets.js";
+import adminRouter from "./admin.js";
+import announcementsRouter from "./announcements.js";
+import statsRouter from "./stats.js";
+import settingsRouter from "./settings.js";
+import rolesRouter from "./roles.js";
+import seedRouter from "./seed.js";
+import profileRouter from "./profile.js";
 
 const router: IRouter = Router();
 
