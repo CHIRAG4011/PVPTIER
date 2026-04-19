@@ -1,33 +1,15 @@
 {
   "version": 2,
-  "builds": [
+  "buildCommand": "pnpm install && pnpm --filter @workspace/pvp-leaderboard run build",
+  "outputDirectory": "artifacts/pvp-leaderboard/dist/public",
+  "rewrites": [
     {
-      "src": "artifacts/api-server/api/index.ts",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["artifacts/api-server/src/**", "lib/**"]
-      }
+      "source": "/api/:path*",
+      "destination": "/api/index"
     },
     {
-      "src": "artifacts/pvp-leaderboard/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist/public",
-        "buildCommand": "pnpm run build"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "artifacts/api-server/api/index.ts"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/((?!assets|favicon).*)",
+      "destination": "/index.html"
     }
   ]
 }
