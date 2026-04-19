@@ -43,9 +43,9 @@ To create additional admins, register normally then update role directly in DB.
 - Connection string stored in `MONGODB_URI` env var (MongoDB Atlas cluster).
 
 ### Vercel Deployment
-See `DEPLOYMENT.md` for full Vercel deployment guide. Deploy as two separate Vercel projects:
-1. API: root directory = `artifacts/api-server`
-2. Frontend: root directory = `artifacts/pvp-leaderboard`, set `VITE_API_URL` to the API's Vercel URL
+See `DEPLOYMENT.md` for full Vercel deployment guide. Deploy as a **single Vercel project** from the repo root:
+- Root `vercel.json` routes `/api/*` to the Express serverless function and everything else to the React SPA.
+- Only two env vars needed: `MONGODB_URI` and `SESSION_SECRET`. No `VITE_API_URL` required (same domain).
 
 ### Known Issues Fixed
 - Database schema was not pushed on first boot — fixed, now tables exist

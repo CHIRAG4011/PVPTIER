@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "buildCommand": "pnpm install && pnpm --filter @workspace/pvp-leaderboard run build",
+  "outputDirectory": "artifacts/pvp-leaderboard/dist/public",
+  "functions": {
+    "artifacts/api-server/api/index.ts": {
+      "includeFiles": "artifacts/api-server/src/**,lib/**"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/artifacts/api-server/api/index.ts"
+    },
+    {
+      "source": "/((?!assets|favicon).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
