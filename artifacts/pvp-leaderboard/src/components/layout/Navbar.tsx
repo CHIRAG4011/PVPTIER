@@ -1,19 +1,25 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Copy, Menu, ShieldAlert, Swords, X } from "lucide-react";
+import { Copy, Menu, ShieldAlert, Swords, X, Settings } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useSiteSettings } from "@/lib/site-settings";
 
 export function Navbar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const settings = useSiteSettings();
+
+  const serverIp = settings.server_ip || "play.pvp-leaderboard.net";
+  const discordUrl = settings.discord_url || "#";
+  const siteName = settings.site_name || "PVPTIERS";
 
   const copyIp = () => {
-    navigator.clipboard.writeText("play.pvp-leaderboard.net");
+    navigator.clipboard.writeText(serverIp);
     toast.success("Server IP copied to clipboard!");
   };
 
@@ -32,7 +38,7 @@ export function Navbar() {
               <Swords className="w-5 h-5 text-primary" />
             </div>
             <span className="font-display font-bold text-xl tracking-tight hidden sm:block">
-              PVP<span className="text-primary">TIERS</span>
+              {siteName.slice(0, -5).toUpperCase() || "PVP"}<span className="text-primary">{siteName.slice(-5).toUpperCase() || "TIERS"}</span>
             </span>
           </Link>
           
@@ -61,19 +67,21 @@ export function Navbar() {
             onClick={copyIp}
           >
             <Copy className="w-3 h-3 mr-2" />
-            play.pvp-leaderboard.net
+            {serverIp}
           </Button>
 
-          <Button 
-            variant="default" 
-            size="sm" 
-            className="bg-[#5865F2] hover:bg-[#4752C4] text-white border-none"
-            asChild
-          >
-            <a href="#" target="_blank" rel="noopener noreferrer">
-              Discord
-            </a>
-          </Button>
+          {discordUrl && discordUrl !== "#" && (
+            <Button 
+              variant="default" 
+              size="sm" 
+              className="bg-[#5865F2] hover:bg-[#4752C4] text-white border-none"
+              asChild
+            >
+              <a href={discordUrl} target="_blank" rel="noopener noreferrer">
+                Discord
+              </a>
+            </Button>
+          )}
 
           {user ? (
             <DropdownMenu>
@@ -103,6 +111,12 @@ export function Navbar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/tickets" className="cursor-pointer">Support Tickets</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="cursor-pointer flex items-center">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </Link>
                 </DropdownMenuItem>
                 
                 {(user.role === 'admin' || user.role === 'superadmin' || user.role === 'moderator') && (

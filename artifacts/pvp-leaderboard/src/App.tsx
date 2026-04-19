@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
+import { SiteSettingsProvider } from "@/lib/site-settings";
 
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
@@ -14,6 +15,9 @@ import SubmitMatch from "@/pages/submit";
 import Tickets from "@/pages/tickets";
 import TicketDetail from "@/pages/ticket-detail";
 import Announcements from "@/pages/announcements";
+import Settings from "@/pages/settings";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
 
 // Admin
 import AdminDashboard from "@/pages/admin/dashboard";
@@ -24,6 +28,8 @@ import AdminTickets from "@/pages/admin/tickets";
 import AdminSeasons from "@/pages/admin/seasons";
 import AdminAnnouncements from "@/pages/admin/announcements";
 import AdminLogs from "@/pages/admin/logs";
+import AdminSettings from "@/pages/admin/settings";
+import AdminRoles from "@/pages/admin/roles";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +52,9 @@ function Router() {
       <Route path="/tickets" component={Tickets} />
       <Route path="/tickets/:id" component={TicketDetail} />
       <Route path="/announcements" component={Announcements} />
+      <Route path="/settings" component={Settings} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
 
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/users" component={AdminUsers} />
@@ -55,6 +64,8 @@ function Router() {
       <Route path="/admin/seasons" component={AdminSeasons} />
       <Route path="/admin/announcements" component={AdminAnnouncements} />
       <Route path="/admin/logs" component={AdminLogs} />
+      <Route path="/admin/settings" component={AdminSettings} />
+      <Route path="/admin/roles" component={AdminRoles} />
 
       <Route component={NotFound} />
     </Switch>
@@ -65,10 +76,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Router />
-          <Toaster />
-        </TooltipProvider>
+        <SiteSettingsProvider>
+          <TooltipProvider>
+            <Router />
+            <Toaster />
+          </TooltipProvider>
+        </SiteSettingsProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

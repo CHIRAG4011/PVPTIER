@@ -1,11 +1,38 @@
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { useGetAdminAnalytics } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Swords, Ticket, AlertTriangle, TrendingUp, ShieldAlert } from "lucide-react";
+import { Users, Swords, Ticket, AlertTriangle, TrendingUp, ShieldAlert, Database, Settings, Shield, RefreshCw } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
+import { toast } from "sonner";
 
 export default function AdminDashboard() {
   const { data: analytics, isLoading } = useGetAdminAnalytics();
+  const [seeding, setSeeding] = useState(false);
+
+  const handleSeed = async (force: boolean) => {
+    setSeeding(true);
+    try {
+      const token = localStorage.getItem("pvp_token");
+      const res = await fetch("/api/admin/seed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ force }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message);
+      } else {
+        toast.error(data.message || "Seed failed");
+      }
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -77,6 +104,46 @@ export default function AdminDashboard() {
             <div className="text-3xl font-bold font-mono">{analytics?.pendingSubmissions}</div>
             <p className="text-xs text-muted-foreground mt-2">Require review</p>
           </div>
+        </div>
+
+        {/* Quick Tools */}
+        <div className="glass-card p-6 rounded-xl border-border space-y-4">
+          <h3 className="font-bold font-display">Quick Tools</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Button variant="outline" className="h-auto py-4 flex-col gap-2" asChild>
+              <Link href="/admin/settings">
+                <Settings className="w-5 h-5 text-primary" />
+                <span className="text-xs">Site Settings</span>
+              </Link>
+            </Button>
+            <Button variant="outline" className="h-auto py-4 flex-col gap-2" asChild>
+              <Link href="/admin/roles">
+                <Shield className="w-5 h-5 text-accent" />
+                <span className="text-xs">Manage Roles</span>
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex-col gap-2"
+              onClick={() => handleSeed(false)}
+              disabled={seeding}
+            >
+              <Database className="w-5 h-5 text-yellow-400" />
+              <span className="text-xs">{seeding ? "Seeding..." : "Seed Data"}</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex-col gap-2"
+              onClick={() => handleSeed(true)}
+              disabled={seeding}
+            >
+              <RefreshCw className="w-5 h-5 text-red-400" />
+              <span className="text-xs">{seeding ? "Seeding..." : "Force Re-seed"}</span>
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            "Seed Data" adds 20 test players. "Force Re-seed" resets and re-creates them. Use force with caution.
+          </p>
         </div>
 
         {/* Charts */}

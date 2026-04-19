@@ -8,12 +8,14 @@ import { Swords, Trophy, Users, ShieldAlert, ArrowRight, Skull, Globe, Zap, Flam
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { useSiteSettings } from "@/lib/site-settings";
 
 export default function Home() {
   const { data: stats, isLoading: statsLoading } = useGetGlobalStats();
   const { data: recent, isLoading: recentLoading } = useGetRecentActivity();
   const { data: topPlayers, isLoading: topLoading } = useGetTopPlayers();
   const { data: announcements, isLoading: announcementsLoading } = useListAnnouncements({ page: 1 });
+  const siteSettings = useSiteSettings();
 
   return (
     <Layout>
@@ -24,19 +26,26 @@ export default function Home() {
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary mb-6">
-              <Trophy className="w-4 h-4" />
-              <span className="text-sm font-medium">Season 4 is currently active</span>
-            </div>
+            {siteSettings.homepage_season_badge && (
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary mb-6">
+                <Trophy className="w-4 h-4" />
+                <span className="text-sm font-medium">{siteSettings.homepage_season_badge}</span>
+              </div>
+            )}
             
             <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 font-display neon-text-primary">
-              DOMINATE THE <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">COMPETITION</span>
+              {siteSettings.homepage_hero_title?.split("\n").map((line, i, arr) => (
+                <span key={i}>
+                  {i === arr.length - 1
+                    ? <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">{line}</span>
+                    : <>{line} <br /></>
+                  }
+                </span>
+              )) || <>DOMINATE THE <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">COMPETITION</span></>}
             </h1>
             
             <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
-              The most prestigious Minecraft PvP ranking platform. 
-              Battle top players, climb the tiers, and prove your worth in the ultimate arena.
+              {siteSettings.homepage_hero_subtitle || "The most prestigious Minecraft PvP ranking platform. Battle top players, climb the tiers, and prove your worth in the ultimate arena."}
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

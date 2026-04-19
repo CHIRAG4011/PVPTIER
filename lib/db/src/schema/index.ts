@@ -6,3 +6,6 @@ export * from "./tickets";
 export * from "./announcements";
 export * from "./seasons";
 export * from "./admin_logs";
+export * from "./site_settings";
+export * from "./custom_roles";
+export * from "./password_resets";

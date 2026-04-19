@@ -1,4 +1,4 @@
-import { Shield, Users, Trophy, Ticket, Target, Bell, History, Menu, LogOut, ChevronLeft } from "lucide-react";
+import { Shield, Users, Trophy, Ticket, Target, Bell, History, Menu, LogOut, ChevronLeft, Settings, ScrollText, Swords } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -6,14 +6,19 @@ import { ReactNode, useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const adminLinks = [
-  { href: "/admin", label: "Dashboard", icon: Trophy },
+  { href: "/admin", label: "Dashboard", icon: Trophy, exact: true },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/players", label: "Players", icon: Target },
-  { href: "/admin/submissions", label: "Submissions", icon: Shield },
+  { href: "/admin/submissions", label: "Submissions", icon: Swords },
   { href: "/admin/tickets", label: "Tickets", icon: Ticket },
-  { href: "/admin/seasons", label: "Seasons", icon: Trophy },
+  { href: "/admin/seasons", label: "Seasons", icon: ScrollText },
   { href: "/admin/announcements", label: "Announcements", icon: Bell },
   { href: "/admin/logs", label: "Audit Logs", icon: History },
+];
+
+const configLinks = [
+  { href: "/admin/roles", label: "Roles", icon: Shield },
+  { href: "/admin/settings", label: "Site Settings", icon: Settings },
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {
@@ -50,9 +55,29 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-3">
           Management
         </div>
-        
+
         {adminLinks.map((link) => {
-          const isActive = location === link.href;
+          const isActive = link.exact ? location === link.href : location.startsWith(link.href);
+          return (
+            <Link key={link.href} href={link.href}>
+              <Button
+                variant={isActive ? "secondary" : "ghost"}
+                className={`w-full justify-start gap-3 ${isActive ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'hover:bg-muted'}`}
+                onClick={() => setMobileOpen(false)}
+              >
+                <link.icon className={`w-4 h-4 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                {link.label}
+              </Button>
+            </Link>
+          );
+        })}
+
+        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-4 mb-2 px-3">
+          Configuration
+        </div>
+
+        {configLinks.map((link) => {
+          const isActive = location.startsWith(link.href);
           return (
             <Link key={link.href} href={link.href}>
               <Button

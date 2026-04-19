@@ -16,6 +16,8 @@ export const usersTable = pgTable("users", {
   discordId: text("discord_id"),
   discordUsername: text("discord_username"),
   discordAvatar: text("discord_avatar"),
+  avatarUrl: text("avatar_url"),
+  bio: text("bio"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
