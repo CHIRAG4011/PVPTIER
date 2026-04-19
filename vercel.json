@@ -1,9 +1,13 @@
 {
   "version": 2,
-  "buildCommand": "pnpm --filter @workspace/pvp-leaderboard run build",
+  "buildCommand": "pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/pvp-leaderboard run build",
   "installCommand": "pnpm install",
   "outputDirectory": "artifacts/pvp-leaderboard/dist",
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index"
+    },
     {
       "source": "/((?!assets|favicon\\.svg|opengraph).*)",
       "destination": "/index.html"
