@@ -1,4 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
+import { eq } from "drizzle-orm";
 import { db, usersTable, playersTable, matchesTable, gamemodeStatsTable } from "@workspace/db";
 import { hashPassword } from "../lib/auth";
 
@@ -34,9 +35,26 @@ const FAKE_PLAYERS = [
 router.post("/admin/seed", async (req: Request, res: Response): Promise<void> => {
   const { force } = req.body;
 
+  // Always ensure a superadmin account exists regardless of seed state
+  const adminPasswordHash = await hashPassword("Admin1234!");
+  try {
+    const existing = await db.select().from(usersTable).where(eq(usersTable.email, "admin@pvp.gg")).limit(1);
+    if (existing.length === 0) {
+      await db.insert(usersTable).values({
+        email: "admin@pvp.gg",
+        username: "Admin",
+        passwordHash: adminPasswordHash,
+        role: "superadmin",
+        isBanned: false,
+      });
+    } else {
+      await db.update(usersTable).set({ role: "superadmin", passwordHash: adminPasswordHash }).where(eq(usersTable.email, "admin@pvp.gg"));
+    }
+  } catch {}
+
   const existingPlayers = await db.select().from(playersTable).limit(1);
   if (existingPlayers.length > 0 && !force) {
-    res.status(400).json({ error: "already_seeded", message: "Database already has players. Pass force=true to re-seed." });
+    res.status(400).json({ error: "already_seeded", message: "Database already has players. Pass force=true to re-seed.", adminCreated: true });
     return;
   }
 
