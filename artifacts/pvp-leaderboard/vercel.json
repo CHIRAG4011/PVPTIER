@@ -3,11 +3,7 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/((?!assets|favicon).*)",
+      "source": "/((?!assets|favicon\\.svg|opengraph).*)",
       "destination": "/index.html"
     }
   ]
