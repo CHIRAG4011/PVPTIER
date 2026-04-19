@@ -10,7 +10,7 @@ mkdir -p .vercel/output/static
 cp -r artifacts/pvp-leaderboard/dist/. .vercel/output/static/
 
 mkdir -p .vercel/output/functions/api.func
-cp api/index.js .vercel/output/functions/api.func/index.js
+cp scripts/api-handler.js .vercel/output/functions/api.func/index.js
 mkdir -p .vercel/output/functions/api.func/artifacts/api-server
 cp -r artifacts/api-server/dist .vercel/output/functions/api.func/artifacts/api-server/dist
 
