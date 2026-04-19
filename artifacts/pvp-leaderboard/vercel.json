@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "buildCommand": "cd ../.. && pnpm install && pnpm --filter @workspace/pvp-leaderboard run build",
+  "outputDirectory": "dist/public",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/((?!assets|favicon).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
