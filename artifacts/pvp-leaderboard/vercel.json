@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "outputDirectory": "artifacts/pvp-leaderboard/dist/public",
   "rewrites": [
     {
       "source": "/api/:path*",
