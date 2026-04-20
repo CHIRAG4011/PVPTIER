@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Save, Globe, Monitor, MessageSquare, Trophy, Palette, Share2, Server } from "lucide-react";
+import { apiUrl } from "@/lib/api";
 
 type Settings = Record<string, string>;
 
@@ -69,7 +70,7 @@ export default function AdminSettings() {
 
   useEffect(() => {
     const token = localStorage.getItem("pvp_token");
-    fetch("/api/admin/settings", {
+    fetch(apiUrl("/api/admin/settings"), {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.json())
@@ -81,7 +82,7 @@ export default function AdminSettings() {
     setSaving(true);
     const token = localStorage.getItem("pvp_token");
     try {
-      const res = await fetch("/api/admin/settings", {
+      const res = await fetch(apiUrl("/api/admin/settings"), {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(settings),

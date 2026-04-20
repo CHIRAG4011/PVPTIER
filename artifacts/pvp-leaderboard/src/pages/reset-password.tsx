@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Link, useLocation } from "wouter";
 import { Key, ArrowLeft, Check } from "lucide-react";
 import { toast } from "sonner";
+import { apiUrl } from "@/lib/api";
 
 export default function ResetPassword() {
   const [, params] = useLocation();
@@ -25,7 +26,7 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/reset-password", {
+      const res = await fetch(apiUrl("/api/auth/reset-password"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: token.trim(), newPassword }),

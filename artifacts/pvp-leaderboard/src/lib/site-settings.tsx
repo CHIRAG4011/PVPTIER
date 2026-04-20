@@ -1,4 +1,5 @@
 import { createContext, useContext, ReactNode, useState, useEffect } from "react";
+import { apiUrl } from "@/lib/api";
 
 type SiteSettings = Record<string, string>;
 
@@ -25,7 +26,7 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
 
   useEffect(() => {
-    fetch("/api/settings/public")
+    fetch(apiUrl("/api/settings/public"))
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setSettings(data); })
       .catch(() => {});

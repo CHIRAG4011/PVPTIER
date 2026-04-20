@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
 import { Mail, ArrowLeft, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
+import { apiUrl } from "@/lib/api";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -17,7 +18,7 @@ export default function ForgotPassword() {
     if (!email) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/forgot-password", {
+      const res = await fetch(apiUrl("/api/auth/forgot-password"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

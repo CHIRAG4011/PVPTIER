@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { toast } from "sonner";
+import { apiUrl } from "@/lib/api";
 
 export default function AdminDashboard() {
   const { data: analytics, isLoading } = useGetAdminAnalytics();
@@ -16,7 +17,7 @@ export default function AdminDashboard() {
     setSeeding(true);
     try {
       const token = localStorage.getItem("pvp_token");
-      const res = await fetch("/api/admin/seed", {
+      const res = await fetch(apiUrl("/api/admin/seed"), {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ force }),
