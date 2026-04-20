@@ -46,4 +46,4 @@ packages = ["neofetch"]
 [userenv]
 
 [userenv.shared]
-MONGODB_URI = "mongodb+srv://chiraggupta0223360:DUSKROOT@cluster0.hanc0l6.mongodb.net/pvptiers"
+MONGODB_URI = "mongodb+srv://chiraggupta0223360:DUSKROOT@teamsovergin.hjeuldl.mongodb.net/?appName=TeamSovergin"
