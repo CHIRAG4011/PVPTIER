@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { Submission, Player, AdminLog } from "@workspace/db";
+import { Submission, Player, AdminLog, User, Match } from "@workspace/db";
 import { CreateSubmissionBody, ListSubmissionsQueryParams } from "@workspace/api-zod";
 import { requireAuth, requireAdmin } from "../lib/auth";
 import type { JwtPayload } from "../lib/auth";
@@ -16,10 +16,17 @@ router.post("/submissions", requireAuth, async (req: Request, res: Response): Pr
   }
 
   const { opponentUsername, gamemode, result, evidence } = parsed.data;
+
+  const opponent = await Player.findOne({ minecraftUsername: { $regex: `^${opponentUsername}$`, $options: "i" } });
+  if (!opponent) {
+    res.status(404).json({ error: "player_not_found", message: `Player "${opponentUsername}" not found in the system. Make sure you enter their exact Minecraft IGN.` });
+    return;
+  }
+
   const submission = await Submission.create({
     submitterId: user.userId,
     submitterUsername: user.username,
-    opponentUsername,
+    opponentUsername: opponent.minecraftUsername,
     gamemode,
     result,
     status: "pending",
@@ -68,12 +75,35 @@ router.post("/submissions/:id/approve", requireAdmin, async (req: Request, res: 
 
   await Submission.findByIdAndUpdate(id, { status: "approved", reviewedBy: adminUser.userId });
 
-  const winner = await Player.findOne({ minecraftUsername: submission.submitterUsername });
+  const submitterUser = await User.findById(submission.submitterId);
+  const submitterMinecraftIGN = submitterUser?.minecraftUsername || submission.submitterUsername;
+
+  const winner = await Player.findOne({ minecraftUsername: { $regex: `^${submitterMinecraftIGN}$`, $options: "i" } });
+  const loser = await Player.findOne({ minecraftUsername: { $regex: `^${submission.opponentUsername}$`, $options: "i" } });
+
+  const eloChange = 25;
+
   if (winner) {
     await Player.findByIdAndUpdate(winner._id, {
-      $inc: { wins: 1, elo: 25, winStreak: 1 },
+      $inc: { wins: 1, elo: eloChange, winStreak: 1 },
     });
   }
+
+  if (loser) {
+    await Player.findByIdAndUpdate(loser._id, {
+      $inc: { losses: 1, elo: -eloChange },
+    });
+  }
+
+  await Match.create({
+    winnerId: winner?._id?.toString() ?? null,
+    loserId: loser?._id?.toString() ?? null,
+    winnerUsername: winner?.minecraftUsername ?? submitterMinecraftIGN,
+    loserUsername: loser?.minecraftUsername ?? submission.opponentUsername,
+    gamemode: submission.gamemode,
+    eloChange,
+    playedAt: new Date(),
+  });
 
   await AdminLog.create({
     adminId: adminUser.userId,

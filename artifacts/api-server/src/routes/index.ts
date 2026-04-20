@@ -13,6 +13,7 @@ import settingsRouter from "./settings.js";
 import rolesRouter from "./roles.js";
 import seedRouter from "./seed.js";
 import profileRouter from "./profile.js";
+import tiertestRouter from "./tiertest.js";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use(settingsRouter);
 router.use(rolesRouter);
 router.use(seedRouter);
 router.use(profileRouter);
+router.use(tiertestRouter);
 
 export default router;

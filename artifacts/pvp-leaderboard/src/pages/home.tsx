@@ -1,21 +1,47 @@
 import { Layout } from "@/components/layout/Layout";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useGetGlobalStats, useGetRecentActivity, useGetTopPlayers, useListAnnouncements } from "@workspace/api-client-react";
 import { GamemodeIcon } from "@/components/ui/gamemode-icon";
 import { TierBadge } from "@/components/ui/tier-badge";
-import { Swords, Trophy, Users, ShieldAlert, ArrowRight, Skull, Globe, Zap, Flame, Leaf, Wind, Axe, History } from "lucide-react";
+import { Swords, Trophy, Users, ShieldAlert, ArrowRight, Skull, Globe, Zap, Flame, Leaf, Wind, Axe, History, Edit, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useSiteSettings } from "@/lib/site-settings";
+import { useAuth } from "@/lib/auth";
+import { apiUrl } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function Home() {
   const { data: stats, isLoading: statsLoading } = useGetGlobalStats();
-  const { data: recent, isLoading: recentLoading } = useGetRecentActivity();
+  const { data: recent, isLoading: recentLoading, refetch: refetchRecent } = useGetRecentActivity();
   const { data: topPlayers, isLoading: topLoading } = useGetTopPlayers();
   const { data: announcements, isLoading: announcementsLoading } = useListAnnouncements({ page: 1 });
   const siteSettings = useSiteSettings();
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
+  const isAdmin = user && ['admin', 'superadmin', 'moderator'].includes(user.role);
+
+  const handleDeleteMatch = async (matchId: string) => {
+    if (!confirm("Delete this match? This cannot be undone.")) return;
+    const token = localStorage.getItem("pvp_token");
+    try {
+      const res = await fetch(apiUrl(`/api/admin/matches/${matchId}`), {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Match deleted.");
+        refetchRecent();
+      } else {
+        toast.error(data.message || "Failed to delete match");
+      }
+    } catch {
+      toast.error("Network error");
+    }
+  };
 
   return (
     <Layout>
@@ -193,9 +219,18 @@ export default function Home() {
 
             {/* Recent Activity */}
             <div className="glass-card rounded-xl border-border overflow-hidden">
-              <div className="bg-muted/30 p-4 border-b border-border flex items-center gap-2">
-                <History className="w-5 h-5 text-primary" />
-                <h3 className="font-bold font-display">Recent Matches</h3>
+              <div className="bg-muted/30 p-4 border-b border-border flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <History className="w-5 h-5 text-primary" />
+                  <h3 className="font-bold font-display">Recent Matches</h3>
+                </div>
+                {isAdmin && (
+                  <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-primary" asChild>
+                    <Link href="/admin/matches">
+                      <Edit className="w-3 h-3" /> Manage
+                    </Link>
+                  </Button>
+                )}
               </div>
               <div className="p-0">
                 {recentLoading ? (
@@ -208,7 +243,7 @@ export default function Home() {
                 ) : (
                   <div className="divide-y divide-border">
                     {recent?.recentMatches.slice(0, 5).map((match) => (
-                      <div key={match.id} className="p-3 flex items-center justify-between hover:bg-muted/20 transition-colors">
+                      <div key={match.id} className="p-3 flex items-center justify-between hover:bg-muted/20 transition-colors group">
                         <div className="flex items-center gap-2">
                           <GamemodeIcon gamemode={match.gamemode} size={14} />
                           <div className="text-sm">
@@ -217,9 +252,29 @@ export default function Home() {
                             <span className="text-red-400 font-medium">{match.loserUsername}</span>
                           </div>
                         </div>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(match.playedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(match.playedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </span>
+                          {isAdmin && (
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                className="text-primary hover:text-primary/80 transition-colors"
+                                title="Edit match"
+                                onClick={() => setLocation("/admin/matches")}
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                className="text-destructive hover:text-destructive/80 transition-colors"
+                                title="Delete match"
+                                onClick={() => handleDeleteMatch(match.id)}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

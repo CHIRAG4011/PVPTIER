@@ -31,6 +31,9 @@ import AdminAnnouncements from "@/pages/admin/announcements";
 import AdminLogs from "@/pages/admin/logs";
 import AdminSettings from "@/pages/admin/settings";
 import AdminRoles from "@/pages/admin/roles";
+import AdminMatches from "@/pages/admin/matches";
+import AdminTierTests from "@/pages/admin/tiertests";
+import TierTest from "@/pages/tier-test";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -68,6 +71,10 @@ function Router() {
       <Route path="/admin/logs" component={AdminLogs} />
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/roles" component={AdminRoles} />
+      <Route path="/admin/matches" component={AdminMatches} />
+      <Route path="/admin/tier-tests" component={AdminTierTests} />
+
+      <Route path="/tier-test" component={TierTest} />
 
       <Route component={NotFound} />
     </Switch>

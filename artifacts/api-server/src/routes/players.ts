@@ -34,6 +34,18 @@ function formatPlayer(p: any) {
   };
 }
 
+router.get("/players/search", async (req: Request, res: Response): Promise<void> => {
+  const q = req.query.q ? String(req.query.q) : "";
+  if (!q || q.length < 2) {
+    res.json({ players: [] });
+    return;
+  }
+
+  const { Player } = await import("@workspace/db");
+  const players = await Player.find({ minecraftUsername: { $regex: q, $options: "i" } }).limit(10);
+  res.json({ players: players.map(formatPlayer) });
+});
+
 router.get("/players", async (req: Request, res: Response): Promise<void> => {
   const parsed = ListPlayersQueryParams.safeParse(req.query);
   if (!parsed.success) {

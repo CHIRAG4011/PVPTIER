@@ -110,6 +110,9 @@ export function Navbar() {
                   <Link href="/submit" className="cursor-pointer">Submit Match</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <Link href="/tier-test" className="cursor-pointer">Apply for Tier Test</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link href="/tickets" className="cursor-pointer">Support Tickets</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -209,6 +212,9 @@ export function Navbar() {
               )}
               <Button variant="ghost" size="sm" className="justify-start" asChild onClick={() => setMobileMenuOpen(false)}>
                 <Link href="/submit">Submit Match</Link>
+              </Button>
+              <Button variant="ghost" size="sm" className="justify-start" asChild onClick={() => setMobileMenuOpen(false)}>
+                <Link href="/tier-test">Apply for Tier Test</Link>
               </Button>
               <Button variant="ghost" size="sm" className="justify-start" asChild onClick={() => setMobileMenuOpen(false)}>
                 <Link href="/tickets">Support Tickets</Link>

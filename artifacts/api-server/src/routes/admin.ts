@@ -395,4 +395,150 @@ router.post("/admin/seasons/:id/reset", requireAdmin, async (req: Request, res: 
   res.json({ success: true, message: "Season rankings reset" });
 });
 
+router.get("/admin/matches", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const page = parseInt(String(req.query.page ?? 1), 10);
+  const limit = 20;
+  const offset = (page - 1) * limit;
+  const search = req.query.search ? String(req.query.search) : undefined;
+
+  const filter: any = {};
+  if (search) {
+    filter.$or = [
+      { winnerUsername: { $regex: search, $options: "i" } },
+      { loserUsername: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  const [matches, total] = await Promise.all([
+    Match.find(filter).sort({ playedAt: -1 }).skip(offset).limit(limit),
+    Match.countDocuments(filter),
+  ]);
+
+  res.json({
+    matches: matches.map((m: any) => ({ ...m.toJSON(), id: m._id.toString() })),
+    total,
+    page,
+    totalPages: Math.ceil(total / limit),
+  });
+});
+
+const EditMatchBody = z.object({
+  winnerUsername: z.string().min(1).optional(),
+  loserUsername: z.string().min(1).optional(),
+  gamemode: z.string().min(1).optional(),
+  eloChange: z.number().int().min(0).optional(),
+  playedAt: z.string().optional(),
+});
+
+router.patch("/admin/matches/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const adminUser = (req as Request & { user?: JwtPayload }).user!;
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
+    res.status(400).json({ error: "invalid_id", message: "Invalid match ID" });
+    return;
+  }
+
+  const parsed = EditMatchBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "validation_error", message: parsed.error.message });
+    return;
+  }
+
+  const updates: any = {};
+  if (parsed.data.winnerUsername) updates.winnerUsername = parsed.data.winnerUsername;
+  if (parsed.data.loserUsername) updates.loserUsername = parsed.data.loserUsername;
+  if (parsed.data.gamemode) updates.gamemode = parsed.data.gamemode;
+  if (parsed.data.eloChange !== undefined) updates.eloChange = parsed.data.eloChange;
+  if (parsed.data.playedAt) updates.playedAt = new Date(parsed.data.playedAt);
+
+  const match = await Match.findByIdAndUpdate(id, updates, { new: true });
+  if (!match) {
+    res.status(404).json({ error: "not_found", message: "Match not found" });
+    return;
+  }
+
+  await AdminLog.create({
+    adminId: adminUser.userId,
+    adminUsername: adminUser.username,
+    action: "edit_match",
+    target: `match:${id}`,
+    details: `Edited match: ${JSON.stringify(updates)}`,
+  });
+
+  res.json({ success: true, match: { ...match.toJSON(), id: match._id.toString() } });
+});
+
+router.delete("/admin/matches/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const adminUser = (req as Request & { user?: JwtPayload }).user!;
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
+    res.status(400).json({ error: "invalid_id", message: "Invalid match ID" });
+    return;
+  }
+
+  const match = await Match.findByIdAndDelete(id);
+  if (!match) {
+    res.status(404).json({ error: "not_found", message: "Match not found" });
+    return;
+  }
+
+  await AdminLog.create({
+    adminId: adminUser.userId,
+    adminUsername: adminUser.username,
+    action: "delete_match",
+    target: `match:${id}`,
+    details: `Deleted match between ${match.winnerUsername} and ${match.loserUsername}`,
+  });
+
+  res.json({ success: true, message: "Match deleted" });
+});
+
+router.post("/admin/matches", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const adminUser = (req as Request & { user?: JwtPayload }).user!;
+
+  const CreateMatchBody = z.object({
+    winnerUsername: z.string().min(1),
+    loserUsername: z.string().min(1),
+    gamemode: z.string().min(1),
+    eloChange: z.number().int().min(0).default(25),
+    playedAt: z.string().optional(),
+  });
+
+  const parsed = CreateMatchBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "validation_error", message: parsed.error.message });
+    return;
+  }
+
+  const winner = await Player.findOne({ minecraftUsername: { $regex: `^${parsed.data.winnerUsername}$`, $options: "i" } });
+  const loser = await Player.findOne({ minecraftUsername: { $regex: `^${parsed.data.loserUsername}$`, $options: "i" } });
+
+  const match = await Match.create({
+    winnerId: winner?._id?.toString() ?? "unknown",
+    loserId: loser?._id?.toString() ?? "unknown",
+    winnerUsername: winner?.minecraftUsername ?? parsed.data.winnerUsername,
+    loserUsername: loser?.minecraftUsername ?? parsed.data.loserUsername,
+    gamemode: parsed.data.gamemode,
+    eloChange: parsed.data.eloChange,
+    playedAt: parsed.data.playedAt ? new Date(parsed.data.playedAt) : new Date(),
+  });
+
+  if (winner) {
+    await Player.findByIdAndUpdate(winner._id, { $inc: { wins: 1, elo: parsed.data.eloChange, winStreak: 1 } });
+  }
+  if (loser) {
+    await Player.findByIdAndUpdate(loser._id, { $inc: { losses: 1, elo: -parsed.data.eloChange } });
+  }
+
+  await AdminLog.create({
+    adminId: adminUser.userId,
+    adminUsername: adminUser.username,
+    action: "create_match",
+    target: `match:${match._id}`,
+    details: `Created match: ${parsed.data.winnerUsername} defeated ${parsed.data.loserUsername} in ${parsed.data.gamemode}`,
+  });
+
+  res.status(201).json({ success: true, match: { ...match.toJSON(), id: match._id.toString() } });
+});
+
 export default router;

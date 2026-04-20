@@ -9,18 +9,119 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Swords, ShieldAlert } from "lucide-react";
+import { Swords, ShieldAlert, Search } from "lucide-react";
+import { apiUrl } from "@/lib/api";
+import { useState, useEffect, useRef } from "react";
 
 const GAMEMODES = ["sword", "axe", "uhc", "vanilla", "smp", "diapot", "nethpot", "elytra"];
 
 const submissionSchema = z.object({
-  opponentUsername: z.string().min(1, { message: "Opponent username is required" }),
+  opponentUsername: z.string().min(1, { message: "Opponent IGN is required" }),
   gamemode: z.string().min(1, { message: "Gamemode is required" }),
   result: z.enum(["win", "loss"], { required_error: "Result is required" }),
   evidence: z.string().url({ message: "Must be a valid URL" }).optional().or(z.literal("")),
 });
+
+function PlayerSearchInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [query, setQuery] = useState(value);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      if (query.length < 2) {
+        setSuggestions([]);
+        return;
+      }
+      setSearching(true);
+      try {
+        const res = await fetch(apiUrl(`/api/players/search?q=${encodeURIComponent(query)}`));
+        const data = await res.json();
+        setSuggestions(data.players || []);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [query]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelect = (player: any) => {
+    setQuery(player.minecraftUsername);
+    onChange(player.minecraftUsername);
+    setShowSuggestions(false);
+    setSuggestions([]);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    setQuery(v);
+    onChange(v);
+    setShowSuggestions(true);
+  };
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Input
+          placeholder="Start typing their Minecraft IGN..."
+          value={query}
+          onChange={handleChange}
+          onFocus={() => query.length >= 2 && setShowSuggestions(true)}
+          className="bg-background/50 border-border/50 pl-9"
+          autoComplete="off"
+        />
+      </div>
+      {showSuggestions && (query.length >= 2) && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg overflow-hidden">
+          {searching ? (
+            <div className="p-3 text-sm text-muted-foreground text-center">Searching...</div>
+          ) : suggestions.length === 0 ? (
+            <div className="p-3 text-sm text-muted-foreground text-center">
+              No players found with that IGN. Make sure they are registered in the system.
+            </div>
+          ) : (
+            <div className="max-h-48 overflow-y-auto">
+              {suggestions.map((player) => (
+                <button
+                  key={player.id}
+                  type="button"
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 flex items-center justify-between transition-colors"
+                  onClick={() => handleSelect(player)}
+                >
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={`https://mc-heads.net/avatar/${player.minecraftUsername}/20`}
+                      className="w-5 h-5 rounded"
+                      alt=""
+                    />
+                    <span className="font-medium">{player.minecraftUsername}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{player.tier} · {player.elo} ELO</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function SubmitMatch() {
   const { user, isAuthenticated } = useAuth();
@@ -89,10 +190,14 @@ export default function SubmitMatch() {
                   name="opponentUsername"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Opponent Username</FormLabel>
+                      <FormLabel>Opponent Minecraft IGN</FormLabel>
                       <FormControl>
-                        <Input placeholder="Notch" {...field} className="bg-background/50 border-border/50" />
+                        <PlayerSearchInput
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
                       </FormControl>
+                      <FormDescription className="text-xs">Search for your opponent by their Minecraft IGN</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

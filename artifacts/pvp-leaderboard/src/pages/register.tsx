@@ -107,7 +107,7 @@ export default function Register() {
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username</FormLabel>
+                      <FormLabel>Minecraft IGN</FormLabel>
                       <FormControl>
                         <Input placeholder="PvPGod" {...field} className="bg-background/50 border-border/50 focus:border-primary" />
                       </FormControl>
