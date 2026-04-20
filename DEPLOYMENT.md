@@ -1,6 +1,6 @@
 # PVPTIERS — Deployment Guide
 
-This guide walks you through publishing PVPTIERS to the internet using **GitHub + Vercel** as a single unified project.
+This guide walks you through deploying PVPTIERS to the internet using **GitHub + Vercel** as two separate projects — one for the API server and one for the frontend.
 
 ---
 
@@ -49,11 +49,11 @@ git commit -m "describe your change"
 git push
 ```
 
-Vercel will automatically detect the push and redeploy your app.
+Vercel will automatically detect the push and redeploy both projects.
 
 ---
 
-## Part 2 — Deploy to Vercel
+## Part 2 — Deploy the API Server
 
 ### 1. Create a Vercel account
 
@@ -63,21 +63,19 @@ Go to [vercel.com](https://vercel.com) and sign up (free). Sign in with your Git
 
 1. Go to [vercel.com/new](https://vercel.com/new)
 2. Click **Continue with GitHub** and authorize Vercel
-3. Find your repo (`pvptiers`) and click **Import**
+3. Find your repo and click **Import**
 
-### 3. Configure the project
+### 3. Configure the API project
 
 On the **Configure Project** screen:
 
 | Setting | Value |
 |---|---|
-| **Root Directory** | `.` *(leave as default — the repo root)* |
+| **Root Directory** | `artifacts/api-server` |
 | **Framework Preset** | Other |
-| **Build Command** | *(leave empty)* |
+| **Build Command** | *(leave empty — vercel.json handles it)* |
 | **Output Directory** | *(leave empty)* |
 | **Install Command** | *(leave empty)* |
-
-> Vercel reads `vercel.json` at the root of the repo and handles everything automatically.
 
 ### 4. Add environment variables
 
@@ -85,7 +83,7 @@ Scroll down to **Environment Variables** and add:
 
 | Variable | Value |
 |---|---|
-| `MONGODB_URI` | Your MongoDB Atlas connection string, e.g. `mongodb+srv://user:pass@cluster.mongodb.net/pvptiers` |
+| `MONGODB_URI` | Your MongoDB Atlas connection string, e.g. `mongodb+srv://user:pass@cluster.mongodb.net/pvptiers?retryWrites=true&w=majority` |
 | `SESSION_SECRET` | A long random secret string (see tip below) |
 
 **Tip — generate a session secret:**
@@ -94,36 +92,69 @@ node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
 Copy the output and paste it as the value for `SESSION_SECRET`.
 
-> `VITE_API_URL` is **not needed** — the API and frontend share the same domain, so all API calls use relative paths automatically.
-
 ### 5. Deploy
 
-Click **Deploy**. Vercel will:
-- Install all dependencies
-- Build the React frontend
-- Set up the Express API as a serverless function
+Click **Deploy**. Your API will go live at a URL like:
+```
+https://pvptiers-api.vercel.app
+```
 
-Your app will go live at a URL like:
+Note this URL — you will need it for the frontend project.
+
+---
+
+## Part 3 — Deploy the Frontend
+
+### 1. Create a second Vercel project
+
+1. Go to [vercel.com/new](https://vercel.com/new)
+2. Import the **same GitHub repo** again
+
+### 2. Configure the frontend project
+
+On the **Configure Project** screen:
+
+| Setting | Value |
+|---|---|
+| **Root Directory** | `artifacts/pvp-leaderboard` |
+| **Framework Preset** | Other |
+| **Build Command** | *(leave empty — vercel.json handles it)* |
+| **Output Directory** | `dist` |
+| **Install Command** | *(leave empty)* |
+
+### 3. Add environment variables
+
+| Variable | Value |
+|---|---|
+| `VITE_API_URL` | Your API server URL from Part 2, e.g. `https://pvptiers-api.vercel.app` |
+
+> No trailing slash on the URL.
+
+### 4. Deploy
+
+Click **Deploy**. Your frontend will go live at a URL like:
 ```
 https://pvptiers.vercel.app
 ```
 
-- `/` → React frontend
-- `/api/*` → Express API
-
 ---
 
-## Part 3 — Seed the Database (First Time Only)
+## Part 4 — Seed the Database (First Time Only)
 
-After your first deploy, run this command to create the admin account and add test player data:
+After both projects are deployed, run this to create the admin account and add test player data:
 
 ```bash
-curl -X POST https://YOUR-APP-URL.vercel.app/api/admin/seed \
+curl -X POST https://YOUR-API-URL.vercel.app/api/admin/seed \
   -H "Content-Type: application/json" \
   -d '{"force": true}'
 ```
 
-Replace `YOUR-APP-URL` with your actual Vercel URL.
+Replace `YOUR-API-URL` with your actual API server Vercel URL.
+
+Expected response:
+```json
+{"success": true, "message": "Seeded 20 players and match history"}
+```
 
 Default admin login:
 - **Email**: `admin@pvp.gg`
@@ -137,9 +168,10 @@ Default admin login:
 2. Create a **free M0 cluster**
 3. Under **Database Access**, create a user with a username and password
 4. Under **Network Access**, click **Add IP Address** → **Allow Access from Anywhere** (`0.0.0.0/0`)
+   > This is required — Vercel uses dynamic IPs so you must allow all addresses.
 5. Click **Connect** on your cluster → **Drivers** → copy the connection string
 6. Replace `<password>` in the string with your DB user's password
-7. Add `/pvptiers` before the `?` to target the correct database, e.g.:
+7. Add `/pvptiers` before the `?` to target the correct database:
    ```
    mongodb+srv://user:pass@cluster.mongodb.net/pvptiers?retryWrites=true&w=majority
    ```
@@ -148,7 +180,7 @@ Default admin login:
 
 ## Redeploying After Changes
 
-Just push to GitHub — Vercel redeploys automatically:
+Just push to GitHub — Vercel redeploys both projects automatically:
 
 ```bash
 git add .
@@ -160,14 +192,19 @@ git push
 
 ## Troubleshooting
 
-**"Cannot connect to MongoDB"**
-Check that `MONGODB_URI` is correct and that Network Access in Atlas allows `0.0.0.0/0`.
+**"This Serverless Function has crashed" on the API**
+Check the Vercel function logs (Deployment → Functions tab). The API will return a JSON error message explaining what went wrong. Common causes:
+- `MONGODB_URI` is missing or wrong — double-check it in Vercel → Settings → Environment Variables
+- MongoDB Atlas Network Access does not allow `0.0.0.0/0` — add it under Network Access in Atlas
 
-**API returns 404**
-Make sure Vercel is deploying from the repo root (not a subdirectory like `artifacts/api-server`).
+**Seed command returns a crash**
+Wait for Vercel to finish redeploying after a push, then try again. The seed runs many database operations and needs the 30-second timeout that is already configured.
+
+**Frontend shows blank page or can't reach API**
+Make sure `VITE_API_URL` is set correctly in the frontend Vercel project and points to the API server URL (no trailing slash).
 
 **Login not working after redeployment**
 If `SESSION_SECRET` changed, old JWT tokens are invalid. Simply log in again.
 
 **Build fails on Vercel**
-Check that the repo has a `vercel.json` at the root and that all files were committed and pushed.
+Make sure the Root Directory is set correctly (`artifacts/api-server` for the API, `artifacts/pvp-leaderboard` for the frontend) and all files were committed and pushed.
