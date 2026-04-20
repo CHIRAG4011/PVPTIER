@@ -197,14 +197,23 @@ Check the Vercel function logs (Deployment → Functions tab). The API will retu
 - `MONGODB_URI` is missing or wrong — double-check it in Vercel → Settings → Environment Variables
 - MongoDB Atlas Network Access does not allow `0.0.0.0/0` — add it under Network Access in Atlas
 
-**Seed command returns a crash**
-Wait for Vercel to finish redeploying after a push, then try again. The seed runs many database operations and needs the 30-second timeout that is already configured.
+**Admin panel not working / roles and settings not saving after deploying**
+This is almost always one of these three causes:
+1. **Session token mismatch** — `SESSION_SECRET` in Vercel doesn't match what was used to sign your login token. Log out, log back in, then retry.
+2. **Wrong database** — `MONGODB_URI` is pointing to a different MongoDB database than expected. Confirm the URI ends with `/pvptiers?...`.
+3. **Stale deployment** — You pushed code but Vercel hasn't finished redeploying. Wait a minute and hard-refresh the browser (`Ctrl+Shift+R` or `Cmd+Shift+R`).
+
+**Admin account missing on fresh database**
+The admin account (`admin@pvp.gg` / `Admin1234!`) is now created automatically when the server starts against a fresh database. No manual curl command is needed. If it still doesn't exist, check that `MONGODB_URI` is set correctly and the server started without errors.
+
+**Seed command returns "already seeded"**
+This is not an error — it means your database already has player data. Use "Force Re-seed" on the admin dashboard if you want to reset the player data.
 
 **Frontend shows blank page or can't reach API**
-Make sure `VITE_API_URL` is set correctly in the frontend Vercel project and points to the API server URL (no trailing slash).
+When using the single-project deployment (root `vercel.json`), no `VITE_API_URL` is needed — the API and frontend share the same domain. If you deployed as two separate projects, make sure `VITE_API_URL` is set in the frontend project and points to the API server URL (no trailing slash).
 
 **Login not working after redeployment**
 If `SESSION_SECRET` changed, old JWT tokens are invalid. Simply log in again.
 
 **Build fails on Vercel**
-Make sure the Root Directory is set correctly (`artifacts/api-server` for the API, `artifacts/pvp-leaderboard` for the frontend) and all files were committed and pushed.
+Make sure all files were committed and pushed to GitHub. The build command in the root `vercel.json` builds both the API and frontend automatically.

@@ -73,9 +73,16 @@ export default function AdminSettings() {
     fetch(apiUrl("/api/admin/settings"), {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then(r => r.json())
-      .then(data => { setSettings(data); setLoading(false); })
-      .catch(() => setLoading(false));
+      .then(async r => {
+        const data = await r.json();
+        if (!r.ok) throw new Error(data?.message || "Failed to load settings");
+        setSettings(data);
+        setLoading(false);
+      })
+      .catch((err: unknown) => {
+        toast.error(err instanceof Error ? err.message : "Failed to load settings");
+        setLoading(false);
+      });
   }, []);
 
   const handleSave = async () => {

@@ -25,6 +25,8 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (data.success) {
         toast.success(data.message);
+      } else if (data.error === "already_seeded") {
+        toast.info(data.message || "Database already has players. Use Force Re-seed to reset.");
       } else {
         toast.error(data.message || "Seed failed");
       }

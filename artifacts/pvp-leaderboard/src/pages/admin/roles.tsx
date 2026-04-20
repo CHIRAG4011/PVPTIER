@@ -35,13 +35,18 @@ type Role = {
   createdAt: string;
 };
 
-function apiRequest(method: string, path: string, body?: unknown) {
+async function apiRequest(method: string, path: string, body?: unknown) {
   const token = localStorage.getItem("pvp_token");
-  return fetch(apiUrl(`/api${path}`), {
+  const res = await fetch(apiUrl(`/api${path}`), {
     method,
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: body ? JSON.stringify(body) : undefined,
-  }).then(r => r.json());
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.message || `Request failed with status ${res.status}`);
+  }
+  return data;
 }
 
 function RoleDialog({ role, onSave, onClose }: { role?: Role; onSave: () => void; onClose: () => void }) {
@@ -76,8 +81,8 @@ function RoleDialog({ role, onSave, onClose }: { role?: Role; onSave: () => void
       toast.success(role ? "Role updated" : "Role created");
       onSave();
       onClose();
-    } catch {
-      toast.error("Failed to save role");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to save role");
     } finally {
       setSaving(false);
     }
