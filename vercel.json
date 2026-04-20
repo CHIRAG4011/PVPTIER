@@ -1,9 +1,15 @@
 {
   "version": 2,
   "buildCommand": "pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/pvp-leaderboard run build",
-  "outputDirectory": "dist",
+  "outputDirectory": "artifacts/pvp-leaderboard/dist",
   "installCommand": "pnpm install",
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "artifacts/api-server/dist/**"
+    }
+  },
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.js" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
