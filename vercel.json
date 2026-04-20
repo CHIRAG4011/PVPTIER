@@ -1,5 +1,10 @@
 {
   "version": 2,
-  "buildCommand": "sh scripts/vercel-build.sh",
-  "installCommand": "pnpm install"
+  "buildCommand": "pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/pvp-leaderboard run build",
+  "outputDirectory": "artifacts/pvp-leaderboard/dist",
+  "installCommand": "pnpm install",
+  "routes": [
+    { "src": "/api(.*)", "dest": "/api" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
 }
