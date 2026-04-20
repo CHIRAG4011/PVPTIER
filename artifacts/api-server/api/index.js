@@ -1,7 +1,7 @@
 let expressApp;
 let initError;
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
   if (!expressApp && !initError) {
     try {
       const mod = await import("../dist/app.mjs");
