@@ -1,19 +1,131 @@
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { useAdminListUsers, useBanUser, useUnbanUser, useUpdateUserRole } from "@workspace/api-client-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Shield, Ban, ShieldAlert, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, Shield, Ban, ShieldAlert, CheckCircle, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { apiUrl } from "@/lib/api";
+
+type CustomRole = {
+  id: string;
+  name: string;
+  color: string;
+  icon?: string;
+  permissions: string[];
+};
+
+function useCustomRoles() {
+  const [roles, setRoles] = useState<CustomRole[]>([]);
+  useEffect(() => {
+    const token = localStorage.getItem("pvp_token");
+    fetch(apiUrl("/api/admin/roles"), {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(d => setRoles(d.roles || []))
+      .catch(() => {});
+  }, []);
+  return roles;
+}
+
+function AssignRoleDialog({
+  userId,
+  username,
+  currentRole,
+  availableRoles,
+  onClose,
+  onSaved,
+}: {
+  userId: string;
+  username: string;
+  currentRole: CustomRole | null;
+  availableRoles: CustomRole[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [selectedRoleId, setSelectedRoleId] = useState<string>(currentRole?.id ?? "none");
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    const token = localStorage.getItem("pvp_token");
+    try {
+      if (selectedRoleId === "none") {
+        await fetch(apiUrl(`/api/admin/users/${userId}/custom-role`), {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        toast.success(`Custom role removed from ${username}`);
+      } else {
+        await fetch(apiUrl(`/api/admin/users/${userId}/custom-role`), {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ roleId: selectedRoleId }),
+        });
+        const role = availableRoles.find(r => r.id === selectedRoleId);
+        toast.success(`Assigned "${role?.name}" to ${username}`);
+      }
+      onSaved();
+      onClose();
+    } catch {
+      toast.error("Failed to update custom role");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Assign a custom display/permission role to <span className="font-bold text-foreground">{username}</span>.
+      </p>
+
+      <Select value={selectedRoleId} onValueChange={setSelectedRoleId}>
+        <SelectTrigger className="bg-background/50 border-border/50">
+          <SelectValue placeholder="Select a role" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="none">
+            <span className="text-muted-foreground italic">No custom role</span>
+          </SelectItem>
+          {availableRoles.map(role => (
+            <SelectItem key={role.id} value={role.id}>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: role.color }} />
+                <span style={{ color: role.color }}>{role.name}</span>
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {availableRoles.length === 0 && (
+        <p className="text-xs text-muted-foreground bg-muted/20 rounded p-3">
+          No custom roles exist yet. Create roles in the Role Management section first.
+        </p>
+      )}
+
+      <div className="flex gap-3 pt-2">
+        <Button onClick={handleSave} disabled={saving} className="flex-1">
+          {saving ? "Saving..." : "Save Assignment"}
+        </Button>
+        <Button variant="outline" onClick={onClose}>Cancel</Button>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminUsers() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("all");
+  const [assigningUser, setAssigningUser] = useState<{ id: string; username: string; customRole: CustomRole | null } | null>(null);
 
   const { data, isLoading, refetch } = useAdminListUsers({ 
     page, 
@@ -24,6 +136,7 @@ export default function AdminUsers() {
   const banMutation = useBanUser();
   const unbanMutation = useUnbanUser();
   const roleMutation = useUpdateUserRole();
+  const customRoles = useCustomRoles();
 
   const handleBan = (id: number, username: string) => {
     const reason = prompt(`Reason for banning ${username}?`);
@@ -96,7 +209,8 @@ export default function AdminUsers() {
             <TableHeader>
               <TableRow className="border-border hover:bg-transparent">
                 <TableHead>User</TableHead>
-                <TableHead>Role</TableHead>
+                <TableHead>System Role</TableHead>
+                <TableHead>Custom Role</TableHead>
                 <TableHead>Minecraft IGN</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -108,19 +222,20 @@ export default function AdminUsers() {
                   <TableRow key={i} className="border-border">
                     <TableCell><Skeleton className="h-6 w-32" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-16" /></TableCell>
                     <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                   </TableRow>
                 ))
-              ) : data?.users.length === 0 ? (
+              ) : (data?.users ?? []).length === 0 ? (
                 <TableRow className="border-border">
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                     No users found.
                   </TableCell>
                 </TableRow>
               ) : (
-                data?.users.map((u) => (
+                (data?.users ?? []).map((u: any) => (
                   <TableRow key={u.id} className="border-border hover:bg-muted/20">
                     <TableCell>
                       <div className="font-bold">{u.username}</div>
@@ -135,6 +250,36 @@ export default function AdminUsers() {
                       }`}>
                         {u.role}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      {u.customRole ? (
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="text-xs px-2 py-1 rounded font-bold border"
+                            style={{
+                              color: u.customRole.color,
+                              backgroundColor: u.customRole.color + "20",
+                              borderColor: u.customRole.color + "50",
+                            }}
+                          >
+                            {u.customRole.name}
+                          </span>
+                          <button
+                            className="text-muted-foreground hover:text-destructive transition-colors"
+                            title="Remove custom role"
+                            onClick={() => setAssigningUser({ id: u.id, username: u.username, customRole: u.customRole })}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          className="text-xs text-muted-foreground hover:text-primary transition-colors italic"
+                          onClick={() => setAssigningUser({ id: u.id, username: u.username, customRole: null })}
+                        >
+                          + Assign
+                        </button>
+                      )}
                     </TableCell>
                     <TableCell>
                       {u.minecraftUsername || <span className="text-muted-foreground italic">Not linked</span>}
@@ -169,6 +314,10 @@ export default function AdminUsers() {
                           <DropdownMenuItem onClick={() => handleRoleChange(u.id, u.username, 'user')}>Set as User</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleRoleChange(u.id, u.username, 'moderator')}>Set as Moderator</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleRoleChange(u.id, u.username, 'admin')}>Set as Admin</DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => setAssigningUser({ id: u.id, username: u.username, customRole: u.customRole })}>
+                            <Shield className="w-4 h-4 mr-2" /> Assign Custom Role
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -195,6 +344,27 @@ export default function AdminUsers() {
           )}
         </div>
       </div>
+
+      {assigningUser && (
+        <Dialog open={!!assigningUser} onOpenChange={o => !o && setAssigningUser(null)}>
+          <DialogContent className="bg-card border-border max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-primary" />
+                Assign Custom Role
+              </DialogTitle>
+            </DialogHeader>
+            <AssignRoleDialog
+              userId={assigningUser.id}
+              username={assigningUser.username}
+              currentRole={assigningUser.customRole}
+              availableRoles={customRoles}
+              onClose={() => setAssigningUser(null)}
+              onSaved={() => refetch()}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </AdminLayout>
   );
 }

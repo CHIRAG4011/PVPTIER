@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { User, Player, Match, Ticket, Submission, AdminLog, Season } from "@workspace/db";
+import { User, Player, Match, Ticket, Submission, AdminLog, Season, UserCustomRole, CustomRole } from "@workspace/db";
 import { AdminListUsersQueryParams, BanUserBody, UpdateUserRoleBody, AdminUpdatePlayerStatsBody, GetAdminLogsQueryParams, CreateSeasonBody } from "@workspace/api-zod";
 import { requireAdmin } from "../lib/auth";
 import type { JwtPayload } from "../lib/auth";
@@ -7,7 +7,7 @@ import mongoose from "mongoose";
 
 const router: IRouter = Router();
 
-function formatUser(u: any) {
+function formatUser(u: any, customRole?: any) {
   return {
     id: u._id.toString(),
     email: u.email,
@@ -19,6 +19,13 @@ function formatUser(u: any) {
     discordUsername: u.discordUsername,
     discordAvatar: u.discordAvatar,
     createdAt: u.createdAt,
+    customRole: customRole ? {
+      id: customRole._id.toString(),
+      name: customRole.name,
+      color: customRole.color,
+      icon: customRole.icon,
+      permissions: customRole.permissions,
+    } : null,
   };
 }
 
@@ -39,8 +46,20 @@ router.get("/admin/users", requireAdmin, async (req: Request, res: Response): Pr
     User.countDocuments(filter),
   ]);
 
+  const userIds = users.map((u: any) => u._id.toString());
+  const customRoleAssignments = await UserCustomRole.find({ userId: { $in: userIds } });
+  const customRoleIds = customRoleAssignments.map((a: any) => a.customRoleId);
+  const customRoles = await CustomRole.find({ _id: { $in: customRoleIds } });
+
+  const roleMap = new Map(customRoles.map((r: any) => [r._id.toString(), r]));
+  const assignmentMap = new Map(customRoleAssignments.map((a: any) => [a.userId, a.customRoleId]));
+
   res.json({
-    users: users.map(formatUser),
+    users: users.map((u: any) => {
+      const roleId = assignmentMap.get(u._id.toString());
+      const customRole = roleId ? roleMap.get(roleId) : null;
+      return formatUser(u, customRole);
+    }),
     total,
     page,
     totalPages: Math.ceil(total / limit),

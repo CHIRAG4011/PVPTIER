@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Plus, Trash2, Edit, Shield, Users, ChevronDown, ChevronRight } from "lucide-react";
+import { apiUrl } from "@/lib/api";
 
 const PERMISSION_GROUPS: Record<string, string[]> = {
   "User Management": ["users.view","users.create","users.edit","users.delete","users.ban","users.unban","users.view_email","users.change_role","users.assign_custom_role","users.view_profile"],
@@ -36,7 +37,7 @@ type Role = {
 
 function apiRequest(method: string, path: string, body?: unknown) {
   const token = localStorage.getItem("pvp_token");
-  return fetch(`/api${path}`, {
+  return fetch(apiUrl(`/api${path}`), {
     method,
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: body ? JSON.stringify(body) : undefined,
