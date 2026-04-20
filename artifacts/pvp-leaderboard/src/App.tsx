@@ -18,6 +18,7 @@ import Announcements from "@/pages/announcements";
 import Settings from "@/pages/settings";
 import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
+import OAuthCallback from "@/pages/oauth-callback";
 
 // Admin
 import AdminDashboard from "@/pages/admin/dashboard";
@@ -55,6 +56,7 @@ function Router() {
       <Route path="/settings" component={Settings} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/oauth/callback" component={OAuthCallback} />
 
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/users" component={AdminUsers} />

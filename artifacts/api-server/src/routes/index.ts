@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health.js";
 import authRouter from "./auth.js";
+import discordRouter from "./discord.js";
 import playersRouter from "./players.js";
 import leaderboardRouter from "./leaderboard.js";
 import submissionsRouter from "./submissions.js";
@@ -17,6 +18,7 @@ const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
+router.use(discordRouter);
 router.use(playersRouter);
 router.use(leaderboardRouter);
 router.use(submissionsRouter);
