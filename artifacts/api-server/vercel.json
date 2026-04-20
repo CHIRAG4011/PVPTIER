@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "buildCommand": "cd ../.. && pnpm install && pnpm --filter @workspace/api-server run build",
+  "installCommand": "echo 'using buildCommand install'",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/index.js" }
+  ]
+}

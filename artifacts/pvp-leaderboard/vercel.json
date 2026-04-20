@@ -1,5 +1,9 @@
 {
   "version": 2,
-  "buildCommand": "sh ../../scripts/vercel-build-subdir.sh",
-  "installCommand": "cd ../.. && pnpm install"
+  "buildCommand": "cd ../.. && pnpm install && pnpm --filter @workspace/pvp-leaderboard run build",
+  "outputDirectory": "dist",
+  "installCommand": "echo 'using buildCommand install'",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
