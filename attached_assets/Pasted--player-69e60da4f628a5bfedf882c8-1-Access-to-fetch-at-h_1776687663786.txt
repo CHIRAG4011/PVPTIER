@@ -1,0 +1,86 @@
+/player/69e60da4f628a5bfedf882c8:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/settings/public' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+pvptier-api-server.vercel.app//api/settings/public:1  Failed to load resource: net::ERR_FAILED
+pvptier-api-server.vercel.app/api/players/69e60da4f628a5bfedf882c8/stats:1  Failed to load resource: the server responded with a status of 404 ()
+pvptier-api-server.vercel.app/api/players/69e60da4f628a5bfedf882c8:1  Failed to load resource: the server responded with a status of 404 ()
+pvptier-api-server.vercel.app/api/auth/me:1  Failed to load resource: the server responded with a status of 404 ()
+/admin/settings:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/settings' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/settings:1  Failed to load resource: net::ERR_FAILED
+/admin/roles:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/roles' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/roles:1  Failed to load resource: net::ERR_FAILED
+index-_4aoJY6E.js:55 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ index-_4aoJY6E.js:55
+/admin/roles:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/roles' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/roles:1  Failed to load resource: net::ERR_FAILED
+/admin/roles:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/roles' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/roles:1  Failed to load resource: net::ERR_FAILED
+/admin/roles:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/roles' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/roles:1  Failed to load resource: net::ERR_FAILED
+/admin/roles:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/roles' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/roles:1  Failed to load resource: net::ERR_FAILED
+/admin/roles:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/roles' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/roles:1  Failed to load resource: net::ERR_FAILED
+/admin:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/seed' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/seed:1  Failed to load resource: net::ERR_FAILED
+/admin:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/seed' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/seed:1  Failed to load resource: net::ERR_FAILED
+/admin:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/seed' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/seed:1  Failed to load resource: net::ERR_FAILED
+index-_4aoJY6E.js:55 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ index-_4aoJY6E.js:55
+/admin/users:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/roles' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/roles:1  Failed to load resource: net::ERR_FAILED
+/admin/players:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/players/69e61691afcda220e50cc229' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/players/69e61691afcda220e50cc229:1  Failed to load resource: net::ERR_FAILED
+index-_4aoJY6E.js:55 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ index-_4aoJY6E.js:55
+/admin/roles:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/roles' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/roles:1  Failed to load resource: net::ERR_FAILED
+/admin/settings:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/settings' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/settings:1  Failed to load resource: net::ERR_FAILED
+/admin/settings:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/settings' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+requests.js:1  GET https://pvptier-api-server.vercel.app//api/admin/settings net::ERR_FAILED
+(anonymous) @ requests.js:1
+(anonymous) @ 200.js:1
+(anonymous) @ index-_4aoJY6E.js:119
+Ou @ index-_4aoJY6E.js:8
+$N @ index-_4aoJY6E.js:8
+_a @ index-_4aoJY6E.js:8
+$N @ index-_4aoJY6E.js:8
+_a @ index-_4aoJY6E.js:8
+$N @ index-_4aoJY6E.js:8
+_a @ index-_4aoJY6E.js:8
+$N @ index-_4aoJY6E.js:8
+_a @ index-_4aoJY6E.js:8
+$N @ index-_4aoJY6E.js:8
+_a @ index-_4aoJY6E.js:8
+$N @ index-_4aoJY6E.js:8
+_a @ index-_4aoJY6E.js:8
+$N @ index-_4aoJY6E.js:8
+_a @ index-_4aoJY6E.js:8
+$N @ index-_4aoJY6E.js:8
+_a @ index-_4aoJY6E.js:8
+$N @ index-_4aoJY6E.js:8
+_a @ index-_4aoJY6E.js:8
+$N @ index-_4aoJY6E.js:8
+_a @ index-_4aoJY6E.js:8
+$N @ index-_4aoJY6E.js:8
+_a @ index-_4aoJY6E.js:8
+$N @ index-_4aoJY6E.js:8
+_a @ index-_4aoJY6E.js:8
+$N @ index-_4aoJY6E.js:8
+_a @ index-_4aoJY6E.js:8
+$N @ index-_4aoJY6E.js:8
+_a @ index-_4aoJY6E.js:8
+$N @ index-_4aoJY6E.js:8
+_a @ index-_4aoJY6E.js:8
+$N @ index-_4aoJY6E.js:8
+aE @ index-_4aoJY6E.js:8
+gh @ index-_4aoJY6E.js:8
+rE @ index-_4aoJY6E.js:8
+JN @ index-_4aoJY6E.js:8
+GN @ index-_4aoJY6E.js:8
+VN @ index-_4aoJY6E.js:8
+uE @ index-_4aoJY6E.js:8
+Ru @ index-_4aoJY6E.js:8
+sE @ index-_4aoJY6E.js:8
+(anonymous) @ index-_4aoJY6E.js:8
