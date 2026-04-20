@@ -3,9 +3,7 @@
   "buildCommand": "pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/pvp-leaderboard run build",
   "outputDirectory": "dist",
   "installCommand": "pnpm install",
-  "routes": [
-    { "src": "/api(.*)", "dest": "/api" },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
