@@ -8,10 +8,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { User, Lock, Image, Save, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
+import { apiUrl } from "@/lib/api";
 
 function apiRequest(method: string, path: string, body: unknown) {
   const token = localStorage.getItem("pvp_token");
-  return fetch(`/api${path}`, {
+  return fetch(apiUrl(`/api${path}`), {
     method,
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(body),

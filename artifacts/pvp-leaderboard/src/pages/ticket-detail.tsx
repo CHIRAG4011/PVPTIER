@@ -22,9 +22,9 @@ export default function TicketDetail() {
   const { isAuthenticated, user } = useAuth();
   const [, setLocation] = useLocation();
   const params = useParams();
-  const id = parseInt(params.id || "0", 10);
+  const id = params.id || "";
 
-  const { data: ticket, isLoading, refetch } = useGetTicket(id, {
+  const { data: ticket, isLoading, refetch } = useGetTicket(id as any, {
     query: { queryKey: ["ticket", id], enabled: !!id && isAuthenticated }
   });
 

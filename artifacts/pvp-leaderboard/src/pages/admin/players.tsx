@@ -1,6 +1,7 @@
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { useListPlayers, useAdminUpdatePlayerStats, useResetPlayerStats } from "@workspace/api-client-react";
 import { useState } from "react";
+import { apiUrl } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -36,7 +37,7 @@ export default function AdminPlayers() {
 
   const updateMutation = useAdminUpdatePlayerStats();
   const resetMutation = useResetPlayerStats();
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof updateSchema>>({
     resolver: zodResolver(updateSchema),
@@ -73,9 +74,9 @@ export default function AdminPlayers() {
     });
   };
 
-  const handleReset = (id: number, username: string) => {
+  const handleReset = (id: string, username: string) => {
     if (confirm(`Are you sure you want to completely reset ${username}'s stats? This action cannot be undone.`)) {
-      resetMutation.mutate({ id }, {
+      resetMutation.mutate({ id: id as any }, {
         onSuccess: () => {
           toast.success(`${username}'s stats have been reset.`);
           refetch();
@@ -84,12 +85,12 @@ export default function AdminPlayers() {
     }
   };
 
-  const handleDelete = async (id: number, username: string) => {
+  const handleDelete = async (id: string, username: string) => {
     if (!confirm(`Permanently delete ${username}? This cannot be undone.`)) return;
     setDeletingId(id);
     try {
       const token = localStorage.getItem("pvp_token");
-      const res = await fetch(`/api/admin/players/${id}`, {
+      const res = await fetch(apiUrl(`/api/admin/players/${id}`), {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

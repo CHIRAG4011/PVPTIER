@@ -10,11 +10,11 @@ import { cn } from "@/lib/utils";
 
 export default function PlayerProfile() {
   const params = useParams();
-  const id = parseInt(params.id || "0", 10);
+  const id = params.id || "";
 
-  const { data: player, isLoading: playerLoading } = useGetPlayer(id);
-  const { data: stats, isLoading: statsLoading } = useGetPlayerStats(id);
-  const { data: matches, isLoading: matchesLoading } = useGetPlayerMatches(id, { limit: 10 });
+  const { data: player, isLoading: playerLoading } = useGetPlayer(id as any);
+  const { data: stats, isLoading: statsLoading } = useGetPlayerStats(id as any);
+  const { data: matches, isLoading: matchesLoading } = useGetPlayerMatches(id as any, { limit: 10 } as any);
 
   if (playerLoading) {
     return (
