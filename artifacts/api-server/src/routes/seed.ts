@@ -65,9 +65,10 @@ router.post("/admin/seed", async (req: Request, res: Response): Promise<void> =>
 
   const passwordHash = await hashPassword("Test1234!");
 
-  for (const p of FAKE_PLAYERS) {
-    try {
-      const user = await User.findOneAndUpdate(
+  // Upsert all users in parallel
+  const users = await Promise.all(
+    FAKE_PLAYERS.map(p =>
+      User.findOneAndUpdate(
         { email: `${p.ign.toLowerCase().replace(/[^a-z0-9]/g, "")}@pvptiers.gg` },
         {
           email: `${p.ign.toLowerCase().replace(/[^a-z0-9]/g, "")}@pvptiers.gg`,
@@ -78,55 +79,50 @@ router.post("/admin/seed", async (req: Request, res: Response): Promise<void> =>
           isBanned: false,
         },
         { upsert: true, new: true }
-      );
+      )
+    )
+  );
 
-      const gamemodeStats = GAMEMODES.map(gm => ({
-        gamemode: gm,
-        wins: Math.floor(p.wins * Math.random() * 0.4),
-        losses: Math.floor(p.losses * Math.random() * 0.4),
-        elo: 800 + Math.floor(Math.random() * 600),
-      }));
+  // Build all player docs and insert in one batch
+  const playerDocs = FAKE_PLAYERS.map((p, i) => ({
+    userId: users[i]!._id.toString(),
+    minecraftUsername: p.ign,
+    tier: p.tier as typeof TIERS[number],
+    elo: p.elo,
+    wins: p.wins,
+    losses: p.losses,
+    winStreak: Math.floor(Math.random() * 10),
+    region: REGIONS[Math.floor(Math.random() * REGIONS.length)],
+    discordUsername: `${p.ign}#${Math.floor(1000 + Math.random() * 9000)}`,
+    gamemodeStats: GAMEMODES.map(gm => ({
+      gamemode: gm,
+      wins: Math.floor(p.wins * Math.random() * 0.4),
+      losses: Math.floor(p.losses * Math.random() * 0.4),
+      elo: 800 + Math.floor(Math.random() * 600),
+    })),
+  }));
 
-      await Player.create({
-        userId: user!._id.toString(),
-        minecraftUsername: p.ign,
-        tier: p.tier as typeof TIERS[number],
-        elo: p.elo,
-        wins: p.wins,
-        losses: p.losses,
-        winStreak: Math.floor(Math.random() * 10),
-        region: REGIONS[Math.floor(Math.random() * REGIONS.length)],
-        discordUsername: `${p.ign}#${Math.floor(1000 + Math.random() * 9000)}`,
-        gamemodeStats,
-      });
-    } catch {}
-  }
+  const allPlayers = await Player.insertMany(playerDocs, { ordered: false }).catch(() => Player.find().limit(20));
 
-  const allPlayers = await Player.find().limit(20);
-  if (allPlayers.length >= 2) {
-    for (let i = 0; i < Math.min(30, allPlayers.length - 1); i++) {
+  // Build all match docs and insert in one batch
+  if (Array.isArray(allPlayers) && allPlayers.length >= 2) {
+    const matchDocs = Array.from({ length: Math.min(30, allPlayers.length - 1) }, () => {
       const winnerIdx = Math.floor(Math.random() * allPlayers.length);
       let loserIdx = Math.floor(Math.random() * allPlayers.length);
       while (loserIdx === winnerIdx) loserIdx = Math.floor(Math.random() * allPlayers.length);
-
       const winner = allPlayers[winnerIdx];
       const loser = allPlayers[loserIdx];
-      const gm = GAMEMODES[Math.floor(Math.random() * GAMEMODES.length)];
-      const daysAgo = Math.floor(Math.random() * 30);
-      const playedAt = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
-
-      try {
-        await Match.create({
-          winnerId: winner._id.toString(),
-          loserId: loser._id.toString(),
-          winnerUsername: winner.minecraftUsername,
-          loserUsername: loser.minecraftUsername,
-          gamemode: gm,
-          eloChange: 15 + Math.floor(Math.random() * 20),
-          playedAt,
-        });
-      } catch {}
-    }
+      return {
+        winnerId: winner._id.toString(),
+        loserId: loser._id.toString(),
+        winnerUsername: winner.minecraftUsername,
+        loserUsername: loser.minecraftUsername,
+        gamemode: GAMEMODES[Math.floor(Math.random() * GAMEMODES.length)],
+        eloChange: 15 + Math.floor(Math.random() * 20),
+        playedAt: new Date(Date.now() - Math.floor(Math.random() * 30) * 86400000),
+      };
+    });
+    await Match.insertMany(matchDocs, { ordered: false }).catch(() => null);
   }
 
   res.json({
