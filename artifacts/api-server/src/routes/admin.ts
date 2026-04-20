@@ -1,6 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { User, Player, Match, Ticket, Submission, AdminLog, Season, UserCustomRole, CustomRole } from "@workspace/db";
 import { AdminListUsersQueryParams, BanUserBody, UpdateUserRoleBody, AdminUpdatePlayerStatsBody, GetAdminLogsQueryParams, CreateSeasonBody } from "@workspace/api-zod";
+import * as z from "zod";
 import { requireAdmin } from "../lib/auth";
 import type { JwtPayload } from "../lib/auth";
 import mongoose from "mongoose";
@@ -139,6 +140,54 @@ router.patch("/admin/users/:id/role", requireAdmin, async (req: Request, res: Re
   });
 
   res.json({ success: true, message: "Role updated" });
+});
+
+const CreatePlayerBody = z.object({
+  minecraftUsername: z.string().min(1).max(16),
+  minecraftUuid: z.string().optional(),
+  discordUsername: z.string().optional(),
+  tier: z.enum(["LT1", "LT2", "LT3", "LT4", "LT5", "HT1", "HT2", "HT3", "HT4", "HT5"]).default("LT1"),
+  elo: z.number().int().default(1000),
+  wins: z.number().int().min(0).default(0),
+  losses: z.number().int().min(0).default(0),
+  region: z.string().default("NA"),
+});
+
+router.post("/admin/players", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const adminUser = (req as Request & { user?: JwtPayload }).user!;
+
+  const parsed = CreatePlayerBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "validation_error", message: parsed.error.message });
+    return;
+  }
+
+  const existing = await Player.findOne({ minecraftUsername: { $regex: `^${parsed.data.minecraftUsername}$`, $options: "i" } });
+  if (existing) {
+    res.status(409).json({ error: "conflict", message: "A player with that IGN already exists" });
+    return;
+  }
+
+  const player = await Player.create({
+    minecraftUsername: parsed.data.minecraftUsername,
+    minecraftUuid: parsed.data.minecraftUuid ?? null,
+    discordUsername: parsed.data.discordUsername ?? null,
+    tier: parsed.data.tier,
+    elo: parsed.data.elo,
+    wins: parsed.data.wins,
+    losses: parsed.data.losses,
+    region: parsed.data.region,
+  });
+
+  await AdminLog.create({
+    adminId: adminUser.userId,
+    adminUsername: adminUser.username,
+    action: "create_player",
+    target: `player:${player._id}`,
+    details: `Created player: ${player.minecraftUsername}`,
+  });
+
+  res.status(201).json({ success: true, player: { id: player._id.toString(), minecraftUsername: player.minecraftUsername } });
 });
 
 router.patch("/admin/players/:id/stats", requireAdmin, async (req: Request, res: Response): Promise<void> => {

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Trophy, Edit, RotateCcw, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Trophy, Edit, RotateCcw, Trash2, ChevronLeft, ChevronRight, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { TierBadge } from "@/components/ui/tier-badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -17,6 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
 const TIERS = ["HT1", "HT2", "HT3", "HT4", "HT5", "LT1", "LT2", "LT3", "LT4", "LT5"] as const;
+const REGIONS = ["NA", "EU", "AS", "SA", "AF", "OC"] as const;
 
 const updateSchema = z.object({
   elo: z.coerce.number().int(),
@@ -25,10 +26,23 @@ const updateSchema = z.object({
   tier: z.enum(TIERS),
 });
 
+const addSchema = z.object({
+  minecraftUsername: z.string().min(1, "IGN is required").max(16, "IGN must be 16 chars or less"),
+  minecraftUuid: z.string().optional(),
+  discordUsername: z.string().optional(),
+  tier: z.enum(TIERS),
+  elo: z.coerce.number().int().default(1000),
+  wins: z.coerce.number().int().min(0).default(0),
+  losses: z.coerce.number().int().min(0).default(0),
+  region: z.enum(REGIONS).default("NA"),
+});
+
 export default function AdminPlayers() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [editingPlayer, setEditingPlayer] = useState<any>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addLoading, setAddLoading] = useState(false);
 
   const { data, isLoading, refetch } = useListPlayers({ 
     page, 
@@ -39,19 +53,28 @@ export default function AdminPlayers() {
   const resetMutation = useResetPlayerStats();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const form = useForm<z.infer<typeof updateSchema>>({
+  const editForm = useForm<z.infer<typeof updateSchema>>({
     resolver: zodResolver(updateSchema),
+    defaultValues: { elo: 1000, wins: 0, losses: 0, tier: "LT1" },
+  });
+
+  const addForm = useForm<z.infer<typeof addSchema>>({
+    resolver: zodResolver(addSchema),
     defaultValues: {
+      minecraftUsername: "",
+      minecraftUuid: "",
+      discordUsername: "",
+      tier: "LT1",
       elo: 1000,
       wins: 0,
       losses: 0,
-      tier: "LT1",
-    }
+      region: "NA",
+    },
   });
 
   const handleEditClick = (player: any) => {
     setEditingPlayer(player);
-    form.reset({
+    editForm.reset({
       elo: player.elo,
       wins: player.wins,
       losses: player.losses,
@@ -61,17 +84,51 @@ export default function AdminPlayers() {
 
   const onSubmitUpdate = (values: z.infer<typeof updateSchema>) => {
     if (!editingPlayer) return;
-    
     updateMutation.mutate({ id: editingPlayer.id, data: values }, {
       onSuccess: () => {
         toast.success(`${editingPlayer.minecraftUsername}'s stats updated.`);
         setEditingPlayer(null);
         refetch();
       },
-      onError: (err) => {
-        toast.error(err.message || "Failed to update stats");
-      }
+      onError: (err) => toast.error(err.message || "Failed to update stats"),
     });
+  };
+
+  const onSubmitAdd = async (values: z.infer<typeof addSchema>) => {
+    setAddLoading(true);
+    try {
+      const token = localStorage.getItem("pvp_token");
+      const res = await fetch(apiUrl("/api/admin/players"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          minecraftUsername: values.minecraftUsername,
+          minecraftUuid: values.minecraftUuid || undefined,
+          discordUsername: values.discordUsername || undefined,
+          tier: values.tier,
+          elo: values.elo,
+          wins: values.wins,
+          losses: values.losses,
+          region: values.region,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`Player "${values.minecraftUsername}" added.`);
+        addForm.reset();
+        setAddOpen(false);
+        refetch();
+      } else {
+        toast.error(data.message || "Failed to add player");
+      }
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setAddLoading(false);
+    }
   };
 
   const handleReset = (id: string, username: string) => {
@@ -80,7 +137,7 @@ export default function AdminPlayers() {
         onSuccess: () => {
           toast.success(`${username}'s stats have been reset.`);
           refetch();
-        }
+        },
       });
     }
   };
@@ -111,9 +168,116 @@ export default function AdminPlayers() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-display font-bold text-foreground">Player Management</h1>
-          <p className="text-muted-foreground">Adjust ELO, tiers, and manage player statistics.</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-display font-bold text-foreground">Player Management</h1>
+            <p className="text-muted-foreground">Adjust ELO, tiers, and manage player statistics.</p>
+          </div>
+
+          <Dialog open={addOpen} onOpenChange={setAddOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <UserPlus className="w-4 h-4" />
+                Add Player
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="border-border bg-card max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Add New Player</DialogTitle>
+              </DialogHeader>
+              <Form {...addForm}>
+                <form onSubmit={addForm.handleSubmit(onSubmitAdd)} className="space-y-4">
+                  <FormField control={addForm.control} name="minecraftUsername" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Minecraft IGN <span className="text-destructive">*</span></FormLabel>
+                      <FormControl>
+                        <Input placeholder="Notch" {...field} className="bg-background/50" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={addForm.control} name="minecraftUuid" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Minecraft UUID <span className="text-muted-foreground text-xs">(optional)</span></FormLabel>
+                        <FormControl>
+                          <Input placeholder="uuid..." {...field} className="bg-background/50" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={addForm.control} name="discordUsername" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Discord Username <span className="text-muted-foreground text-xs">(optional)</span></FormLabel>
+                        <FormControl>
+                          <Input placeholder="user#0001" {...field} className="bg-background/50" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={addForm.control} name="tier" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tier</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {TIERS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+                    <FormField control={addForm.control} name="region" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Region</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {REGIONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField control={addForm.control} name="elo" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ELO</FormLabel>
+                        <FormControl><Input type="number" {...field} className="bg-background/50" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={addForm.control} name="wins" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Wins</FormLabel>
+                        <FormControl><Input type="number" {...field} className="bg-background/50" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={addForm.control} name="losses" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Losses</FormLabel>
+                        <FormControl><Input type="number" {...field} className="bg-background/50" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  <Button type="submit" className="w-full" disabled={addLoading}>
+                    {addLoading ? "Adding Player..." : "Add Player"}
+                  </Button>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="glass-card p-4 rounded-xl border-border flex items-center">
@@ -184,9 +348,9 @@ export default function AdminPlayers() {
                           <DialogHeader>
                             <DialogTitle>Edit Stats: {p.minecraftUsername}</DialogTitle>
                           </DialogHeader>
-                          <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmitUpdate)} className="space-y-4">
-                              <FormField control={form.control} name="tier" render={({ field }) => (
+                          <Form {...editForm}>
+                            <form onSubmit={editForm.handleSubmit(onSubmitUpdate)} className="space-y-4">
+                              <FormField control={editForm.control} name="tier" render={({ field }) => (
                                 <FormItem>
                                   <FormLabel>Tier</FormLabel>
                                   <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -200,19 +364,19 @@ export default function AdminPlayers() {
                                 </FormItem>
                               )} />
                               <div className="grid grid-cols-3 gap-4">
-                                <FormField control={form.control} name="elo" render={({ field }) => (
+                                <FormField control={editForm.control} name="elo" render={({ field }) => (
                                   <FormItem>
                                     <FormLabel>Global ELO</FormLabel>
                                     <FormControl><Input type="number" {...field} /></FormControl>
                                   </FormItem>
                                 )} />
-                                <FormField control={form.control} name="wins" render={({ field }) => (
+                                <FormField control={editForm.control} name="wins" render={({ field }) => (
                                   <FormItem>
                                     <FormLabel>Wins</FormLabel>
                                     <FormControl><Input type="number" {...field} /></FormControl>
                                   </FormItem>
                                 )} />
-                                <FormField control={form.control} name="losses" render={({ field }) => (
+                                <FormField control={editForm.control} name="losses" render={({ field }) => (
                                   <FormItem>
                                     <FormLabel>Losses</FormLabel>
                                     <FormControl><Input type="number" {...field} /></FormControl>
