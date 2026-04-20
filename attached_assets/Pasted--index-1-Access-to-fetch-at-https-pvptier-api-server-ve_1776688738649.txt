@@ -1,0 +1,12 @@
+(index):1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/settings/public' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+pvptier-api-server.vercel.app//api/settings/public:1  Failed to load resource: net::ERR_FAILED
+/admin/settings:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/settings' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/settings:1  Failed to load resource: net::ERR_FAILED
+/admin/settings:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/settings' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/settings:1  Failed to load resource: net::ERR_FAILED
+/admin/settings:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/settings' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/settings:1  Failed to load resource: net::ERR_FAILED
+/admin/settings:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/settings' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/settings:1  Failed to load resource: net::ERR_FAILED
+/admin/settings:1 Access to fetch at 'https://pvptier-api-server.vercel.app//api/admin/settings' from origin 'https://pvptier-pvp-leaderboard.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+pvptier-api-server.vercel.app//api/admin/settings:1  Failed to load resource: net::ERR_FAILED
