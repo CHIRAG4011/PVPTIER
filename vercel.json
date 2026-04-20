@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/pvp-leaderboard run build && cp -r artifacts/pvp-leaderboard/dist/. dist/",
+  "buildCommand": "pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/pvp-leaderboard run build && mkdir -p dist && cp -r artifacts/pvp-leaderboard/dist/. dist/",
   "outputDirectory": "dist",
   "installCommand": "pnpm install",
   "routes": [
