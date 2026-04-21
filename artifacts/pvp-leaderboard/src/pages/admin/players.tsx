@@ -235,7 +235,7 @@ export default function AdminPlayers() {
                   });
                   const data = await res.json();
                   if (res.ok) {
-                    toast.success(`Synced: ${data.created} created, ${data.linked} linked, ${data.skipped} skipped`, { id: t });
+                    toast.success(`Synced: ${data.created} created, ${data.linked} linked, ${data.skipped} skipped, ${data.backfilledTiers ?? 0} tier-backfills`, { id: t });
                     refetch();
                   } else {
                     toast.error(data.message || "Sync failed", { id: t });

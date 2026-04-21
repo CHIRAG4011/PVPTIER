@@ -178,6 +178,27 @@ router.post("/admin/players/sync-users", requireAdmin, async (req: Request, res:
   let created = 0;
   let linked = 0;
   let skipped = 0;
+  let backfilledTiers = 0;
+
+  // Backfill: for any player whose gamemodeStats entries are missing `tier`,
+  // default the tier to the player's overall tier so the Top-4 column populates.
+  const playersNeedingBackfill = await Player.find({});
+  for (const pl of playersNeedingBackfill) {
+    const stats = (pl.gamemodeStats ?? []) as any[];
+    let changed = false;
+    for (const s of stats) {
+      if (s && !s.tier && pl.tier) {
+        s.tier = pl.tier;
+        changed = true;
+      }
+    }
+    if (changed) {
+      pl.gamemodeStats = stats as any;
+      pl.markModified("gamemodeStats");
+      await pl.save();
+      backfilledTiers++;
+    }
+  }
 
   for (const u of users) {
     const playerName = ((u as any).minecraftUsername ?? u.username ?? "").trim();
@@ -218,10 +239,10 @@ router.post("/admin/players/sync-users", requireAdmin, async (req: Request, res:
     adminUsername: adminUser.username,
     action: "sync_players",
     target: "players",
-    details: `Synced users → players. created=${created}, linked=${linked}, skipped=${skipped}, total=${users.length}`,
+    details: `Synced users → players. created=${created}, linked=${linked}, skipped=${skipped}, total=${users.length}, backfilledTiers=${backfilledTiers}`,
   });
 
-  res.json({ success: true, created, linked, skipped, total: users.length });
+  res.json({ success: true, created, linked, skipped, total: users.length, backfilledTiers });
 });
 
 router.post("/admin/players", requireAdmin, async (req: Request, res: Response): Promise<void> => {

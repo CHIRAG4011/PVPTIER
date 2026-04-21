@@ -147,12 +147,12 @@ export default function Leaderboard() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-center table-fixed">
                   <colgroup>
-                    <col className="w-[80px]" />
-                    <col className="w-[220px]" />
-                    <col className="w-[110px]" />
-                    <col className="w-[140px]" />
-                    <col className="w-[90px]" />
+                    <col className="w-[72px]" />
                     <col />
+                    <col className="w-[100px]" />
+                    <col className="w-[130px]" />
+                    <col className="w-[80px]" />
+                    <col className="w-[260px]" />
                   </colgroup>
                   <thead className="text-xs uppercase bg-gradient-to-r from-muted/40 via-primary/5 to-muted/40 text-muted-foreground border-b border-primary/20">
                     <tr>

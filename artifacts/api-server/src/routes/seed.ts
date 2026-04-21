@@ -134,12 +134,18 @@ router.post("/admin/seed", async (req: Request, res: Response): Promise<void> =>
     winStreak: Math.floor(Math.random() * 10),
     region: REGIONS[Math.floor(Math.random() * REGIONS.length)],
     discordUsername: `${p.ign}#${Math.floor(1000 + Math.random() * 9000)}`,
-    gamemodeStats: GAMEMODES.map(gm => ({
-      gamemode: gm,
-      wins: Math.floor(p.wins * Math.random() * 0.4),
-      losses: Math.floor(p.losses * Math.random() * 0.4),
-      elo: 800 + Math.floor(Math.random() * 600),
-    })),
+    gamemodeStats: GAMEMODES.map(gm => {
+      const offset = Math.floor(Math.random() * 3) - 1;
+      const base = TIERS.indexOf(p.tier as typeof TIERS[number]);
+      const idx = Math.max(0, Math.min(TIERS.length - 1, base + offset));
+      return {
+        gamemode: gm,
+        wins: Math.floor(p.wins * Math.random() * 0.4),
+        losses: Math.floor(p.losses * Math.random() * 0.4),
+        elo: 800 + Math.floor(Math.random() * 600),
+        tier: TIERS[idx],
+      };
+    }),
   }));
 
   const allPlayers = await Player.insertMany(playerDocs, { ordered: false }).catch(() => Player.find().limit(20));
