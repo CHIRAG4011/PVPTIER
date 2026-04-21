@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Copy, Menu, ShieldAlert, Swords, X, Settings, Plus, Inbox } from "lucide-react";
+import { Copy, Menu, ShieldAlert, Swords, X, Settings, Plus, Inbox, Trophy } from "lucide-react";
 import { NotificationsBell } from "@/components/NotificationsBell";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -143,6 +143,11 @@ export function Navbar() {
                   <Link href="/submit" className="cursor-pointer">Submit Match Video</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <Link href="/my-submissions" className="cursor-pointer flex items-center">
+                    <Trophy className="w-4 h-4 mr-2" /> My Submissions
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link href="/tier-test" className="cursor-pointer">Apply for Tier Test</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -251,6 +256,9 @@ export function Navbar() {
               </Button>
               <Button variant="ghost" size="sm" className="justify-start" asChild onClick={() => setMobileMenuOpen(false)}>
                 <Link href="/submit">Submit Match Video</Link>
+              </Button>
+              <Button variant="ghost" size="sm" className="justify-start" asChild onClick={() => setMobileMenuOpen(false)}>
+                <Link href="/my-submissions">My Submissions</Link>
               </Button>
               <Button variant="ghost" size="sm" className="justify-start" asChild onClick={() => setMobileMenuOpen(false)}>
                 <Link href="/tier-test">Apply for Tier Test</Link>

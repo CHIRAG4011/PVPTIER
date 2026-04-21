@@ -83,6 +83,29 @@ router.post("/submissions", requireAuth, async (req: Request, res: Response): Pr
   res.status(201).json({ ...submission.toJSON(), id: submission._id.toString() });
 });
 
+router.get("/submissions/mine", requireAuth, async (req: Request, res: Response): Promise<void> => {
+  const user = (req as Request & { user?: JwtPayload }).user!;
+  const userDoc = await User.findById(user.userId);
+  const myIGN = userDoc?.minecraftUsername || user.username;
+  const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  // Submissions I sent
+  const sent = await Submission.find({ submitterId: user.userId }).sort({ createdAt: -1 }).limit(100);
+
+  // Submissions where I'm the opponent (someone reported a match against me)
+  const received = await Submission.find({
+    opponentUsername: { $regex: `^${escapeRegex(myIGN)}$`, $options: "i" },
+  })
+    .sort({ createdAt: -1 })
+    .limit(100);
+
+  const fmt = (s: any) => ({ ...s.toJSON(), id: s._id.toString() });
+  res.json({
+    sent: sent.map(fmt),
+    received: received.map(fmt),
+  });
+});
+
 router.get("/submissions", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const parsed = ListSubmissionsQueryParams.safeParse(req.query);
   const page = parsed.success ? (parsed.data.page ?? 1) : 1;
