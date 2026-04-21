@@ -180,20 +180,39 @@ router.post("/admin/players/sync-users", requireAdmin, async (req: Request, res:
   let skipped = 0;
   let backfilledTiers = 0;
 
-  // Backfill: for any player whose gamemodeStats entries are missing `tier`,
-  // default the tier to the player's overall tier so the Top-4 column populates.
+  // Backfill: ensure every player has all gamemodes populated with a tier,
+  // varied ±2 around their overall tier so the leaderboard shows a mix.
+  const TIER_ORDER = ["HT1","HT2","HT3","HT4","HT5","LT1","LT2","LT3","LT4","LT5"];
+  function offsetTier(base: string, delta: number): string {
+    const idx = TIER_ORDER.indexOf(base);
+    if (idx < 0) return base;
+    const next = Math.max(0, Math.min(TIER_ORDER.length - 1, idx + delta));
+    return TIER_ORDER[next] as string;
+  }
+
   const playersNeedingBackfill = await Player.find({});
   for (const pl of playersNeedingBackfill) {
-    const stats = (pl.gamemodeStats ?? []) as any[];
+    const baseTier = pl.tier ?? "LT3";
+    const existing = (pl.gamemodeStats ?? []) as any[];
+    const byMode = new Map(existing.map(s => [s.gamemode, s]));
     let changed = false;
-    for (const s of stats) {
-      if (s && !s.tier && pl.tier) {
-        s.tier = pl.tier;
+
+    SUPPORTED_GAMEMODES.forEach((gm, i) => {
+      const cur = byMode.get(gm);
+      // Deterministic per-gamemode offset (-2..+2)
+      const delta = ((i * 31 + (pl.minecraftUsername?.length ?? 0)) % 5) - 2;
+      const desiredTier = offsetTier(baseTier, delta);
+      if (!cur) {
+        byMode.set(gm, { gamemode: gm, wins: 0, losses: 0, elo: 1000, tier: desiredTier });
+        changed = true;
+      } else if (!cur.tier) {
+        cur.tier = desiredTier;
         changed = true;
       }
-    }
+    });
+
     if (changed) {
-      pl.gamemodeStats = stats as any;
+      pl.gamemodeStats = Array.from(byMode.values()) as any;
       pl.markModified("gamemodeStats");
       await pl.save();
       backfilledTiers++;

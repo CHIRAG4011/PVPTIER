@@ -39,17 +39,22 @@ function TopGamemodes({ stats, fallbackTier }: { stats: { gamemode: string; tier
   }
 
   return (
-    <div className="flex items-center justify-center gap-1.5 flex-wrap">
-      {ranked.map(s => (
-        <div
-          key={s.gamemode}
-          className="flex items-center gap-1 px-1.5 py-1 rounded-md bg-muted/30 border border-border/50"
-          title={`${s.gamemode}: ${s.tier}`}
-        >
-          <GamemodeIcon gamemode={s.gamemode} className="w-3.5 h-3.5" />
-          <TierBadge tier={s.tier as string} size="sm" showGlow={false} />
-        </div>
-      ))}
+    <div className="flex items-center justify-center gap-1">
+      {ranked.map(s => {
+        const isHigh = (s.tier as string).startsWith("HT");
+        return (
+          <div
+            key={s.gamemode}
+            className={`flex items-center gap-0.5 px-1 py-0.5 rounded-md ${isHigh ? "bg-yellow-500/10" : "bg-muted/30"}`}
+            title={`${s.gamemode}: ${s.tier}`}
+          >
+            <GamemodeIcon gamemode={s.gamemode} className="w-3 h-3" />
+            <span className={`text-[10px] font-bold font-mono leading-none ${isHigh ? "text-yellow-400" : "text-muted-foreground"}`}>
+              {s.tier}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -163,7 +168,7 @@ export default function Leaderboard() {
                     <div className="text-center">Score</div>
                     <div className="text-center">W / L</div>
                     <div className="text-center">Region</div>
-                    <div className="text-center">Tier (Top 4)</div>
+                    <div className="text-center">Tier</div>
                   </div>
 
                   {/* Body */}
