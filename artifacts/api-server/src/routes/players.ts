@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { Player } from "@workspace/db";
+import { Player, User } from "@workspace/db";
 import { ListPlayersQueryParams } from "@workspace/api-zod";
 import mongoose from "mongoose";
 
@@ -86,6 +86,39 @@ router.get("/players/:id", async (req: Request, res: Response): Promise<void> =>
   if (!player) {
     player = await Player.findOne({ userId: id });
   }
+
+  // If still no Player but the id refers to a real User, auto-create a Player
+  // record so older accounts (registered before auto-create existed) work too.
+  if (!player) {
+    const userDoc = await User.findById(id);
+    if (userDoc) {
+      const playerName = (userDoc.minecraftUsername || userDoc.username || "").trim();
+      if (playerName) {
+        const existingByName = await Player.findOne({ minecraftUsername: playerName });
+        if (existingByName) {
+          if (!existingByName.userId) {
+            existingByName.userId = userDoc._id.toString();
+            await existingByName.save();
+          }
+          player = existingByName;
+        } else {
+          player = await Player.create({
+            userId: userDoc._id.toString(),
+            minecraftUsername: playerName,
+            tier: "LT1",
+            elo: 0,
+            wins: 0,
+            losses: 0,
+            winStreak: 0,
+            region: "NA",
+            badges: [],
+            gamemodeStats: [],
+          });
+        }
+      }
+    }
+  }
+
   if (!player) {
     res.status(404).json({ error: "not_found", message: "Player not found" });
     return;
