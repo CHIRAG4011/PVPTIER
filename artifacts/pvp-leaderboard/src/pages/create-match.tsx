@@ -99,7 +99,7 @@ function PlayerSearchInput({ value, onChange }: { value: string; onChange: (v: s
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Badge variant="outline" className="text-xs font-mono">{player.tier}</Badge>
-                    <span>{player.elo} ELO</span>
+                    <span>{player.elo} Score</span>
                   </div>
                 </button>
               ))}
@@ -179,7 +179,7 @@ export default function CreateMatch() {
           <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5 text-red-400" />
           <div>
             <p className="font-bold mb-1 text-red-300">Video recording is mandatory</p>
-            <p className="text-red-200/80">After the match, the winner must upload a full video of the fight. Matches without video evidence won't count toward ELO.</p>
+            <p className="text-red-200/80">After the match, the winner must upload a full video of the fight. Matches without video evidence won't count toward Score.</p>
           </div>
         </div>
 

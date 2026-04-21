@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Trophy, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Trophy, Search, ChevronLeft, ChevronRight, Crown, Medal, Award, Zap, TrendingUp, Users, Swords } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const GAMEMODES = ["sword", "axe", "uhc", "vanilla", "smp", "diapot", "nethpot", "elytra"];
@@ -62,20 +62,32 @@ export default function Leaderboard() {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-12">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+      <div className="relative">
+        {/* Ambient grid + glow background */}
+        <div className="pointer-events-none absolute inset-0 grid-bg opacity-40" />
+        <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/10 blur-[120px] rounded-full" />
+        <div className="pointer-events-none absolute top-40 right-0 w-[400px] h-[400px] bg-accent/5 blur-[120px] rounded-full" />
+
+        <div className="container relative mx-auto px-4 py-12">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 animate-row-rise">
           <div>
-            <h1 className="text-4xl font-display font-bold neon-text-primary mb-2">Global Leaderboard</h1>
-            <p className="text-muted-foreground">The most elite players sorted by ELO rating.</p>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary/30 to-accent/20 border border-primary/40 flex items-center justify-center animate-pulse-glow">
+                <Trophy className="w-5 h-5 text-primary" />
+              </div>
+              <span className="font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground">Live Rankings</span>
+            </div>
+            <h1 className="text-5xl font-display font-bold mb-2 shimmer-text leading-tight">Global Leaderboard</h1>
+            <p className="text-muted-foreground">The most elite players, ranked by Score across all gamemodes.</p>
           </div>
           
-          <div className="flex flex-wrap items-center gap-3 bg-card p-2 rounded-xl border border-border w-full md:w-auto">
+          <div className="flex flex-wrap items-center gap-2 glass-card p-2 rounded-xl w-full md:w-auto">
             {GAMEMODES.map((gm) => (
               <Button
                 key={gm}
                 variant={gamemode === gm ? "secondary" : "ghost"}
                 size="sm"
-                className={`capitalize ${gamemode === gm ? "bg-primary/20 text-primary border border-primary/30" : ""}`}
+                className={`capitalize transition-all duration-300 ${gamemode === gm ? "bg-primary/20 text-primary border border-primary/40 shadow-[0_0_12px_-2px_hsl(var(--primary)/0.6)] scale-105" : "hover:scale-105"}`}
                 onClick={() => { setGamemode(gm); setPage(1); }}
               >
                 <GamemodeIcon gamemode={gm} className="w-4 h-4 mr-2" />
@@ -104,26 +116,20 @@ export default function Leaderboard() {
               </div>
 
               <div className="pt-6 border-t border-border/50">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 block">Platform Stats</label>
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 block flex items-center gap-2">
+                  <Zap className="w-3.5 h-3.5 text-primary" /> Platform Stats
+                </label>
                 {summaryLoading ? (
-                  <div className="space-y-4">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-full" />
+                  <div className="space-y-3">
+                    <Skeleton className="h-14 w-full" />
+                    <Skeleton className="h-14 w-full" />
+                    <Skeleton className="h-14 w-full" />
                   </div>
                 ) : summary ? (
-                  <div className="space-y-4 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Total Players</span>
-                      <span className="font-bold">{summary.totalPlayers.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Matches Played</span>
-                      <span className="font-bold">{summary.totalMatches.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Highest ELO</span>
-                      <span className="font-bold text-primary">{summary.highestElo}</span>
-                    </div>
+                  <div className="space-y-3 text-sm">
+                    <StatTile icon={<Users className="w-4 h-4" />} label="Total Players" value={summary.totalPlayers.toLocaleString()} />
+                    <StatTile icon={<Swords className="w-4 h-4" />} label="Matches Played" value={summary.totalMatches.toLocaleString()} />
+                    <StatTile icon={<TrendingUp className="w-4 h-4" />} label="Highest Score" value={summary.highestElo.toLocaleString()} highlight />
                   </div>
                 ) : null}
               </div>
@@ -131,20 +137,26 @@ export default function Leaderboard() {
           </div>
 
           <div className="lg:col-span-3">
-            <div className="glass-card rounded-xl overflow-hidden border-border">
+            <div className="glass-card rounded-xl overflow-hidden border-border relative">
+              {/* corner accents */}
+              <div className="pointer-events-none absolute top-0 left-0 w-12 h-12 border-t-2 border-l-2 border-primary/40 rounded-tl-xl" />
+              <div className="pointer-events-none absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-primary/40 rounded-tr-xl" />
+              <div className="pointer-events-none absolute bottom-0 left-0 w-12 h-12 border-b-2 border-l-2 border-primary/40 rounded-bl-xl" />
+              <div className="pointer-events-none absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-primary/40 rounded-br-xl" />
+
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="text-xs uppercase bg-muted/30 text-muted-foreground border-b border-border">
+                  <thead className="text-xs uppercase bg-gradient-to-r from-muted/40 via-primary/5 to-muted/40 text-muted-foreground border-b border-primary/20">
                     <tr>
-                      <th className="px-6 py-4 font-bold">Rank</th>
-                      <th className="px-6 py-4 font-bold">Player</th>
-                      <th className="px-6 py-4 font-bold text-right">ELO</th>
-                      <th className="px-6 py-4 font-bold text-center">Tier</th>
-                      <th className="px-6 py-4 font-bold text-center">Top Gamemodes</th>
-                      <th className="px-6 py-4 font-bold text-center">W/L</th>
+                      <th className="px-6 py-4 font-bold tracking-widest">Rank</th>
+                      <th className="px-6 py-4 font-bold tracking-widest">Player</th>
+                      <th className="px-6 py-4 font-bold tracking-widest text-right">Score</th>
+                      <th className="px-6 py-4 font-bold tracking-widest text-center">Tier</th>
+                      <th className="px-6 py-4 font-bold tracking-widest text-center">Top Gamemodes</th>
+                      <th className="px-6 py-4 font-bold tracking-widest text-center">W / L</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border/50">
+                  <tbody className="divide-y divide-border/40">
                     {leaderboardLoading ? (
                       Array.from({ length: 10 }).map((_, i) => (
                         <tr key={i}>
@@ -152,6 +164,7 @@ export default function Leaderboard() {
                           <td className="px-6 py-4"><Skeleton className="h-8 w-32" /></td>
                           <td className="px-6 py-4"><Skeleton className="h-6 w-12 ml-auto" /></td>
                           <td className="px-6 py-4"><Skeleton className="h-6 w-16 mx-auto" /></td>
+                          <td className="px-6 py-4"><Skeleton className="h-6 w-20 mx-auto" /></td>
                           <td className="px-6 py-4"><Skeleton className="h-6 w-20 mx-auto" /></td>
                         </tr>
                       ))
@@ -162,29 +175,43 @@ export default function Leaderboard() {
                         </td>
                       </tr>
                     ) : (
-                      leaderboard?.entries.map((entry, i) => (
-                        <tr key={entry.player.id} className="hover:bg-muted/20 transition-colors group">
+                      leaderboard?.entries.map((entry, i) => {
+                        const isTop = entry.rank <= 3;
+                        const rowAccent =
+                          entry.rank === 1 ? 'before:bg-yellow-500' :
+                          entry.rank === 2 ? 'before:bg-gray-300' :
+                          entry.rank === 3 ? 'before:bg-amber-600' :
+                          'before:bg-transparent';
+                        return (
+                        <tr
+                          key={entry.player.id}
+                          className={`relative hover:bg-primary/5 transition-all duration-300 group scanline-overlay animate-row-rise before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-r ${rowAccent} ${isTop ? 'bg-gradient-to-r from-primary/[0.04] to-transparent' : ''}`}
+                          style={{ animationDelay: `${i * 30}ms` }}
+                        >
                           <td className="px-6 py-4">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                              entry.rank === 1 ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/50 shadow-[0_0_10px_rgba(234,179,8,0.3)]' :
-                              entry.rank === 2 ? 'bg-gray-300/20 text-gray-300 border border-gray-300/50' :
-                              entry.rank === 3 ? 'bg-amber-700/20 text-amber-600 border border-amber-700/50' :
-                              'text-muted-foreground'
-                            }`}>
-                              {entry.rank}
-                            </div>
+                            <RankBadge rank={entry.rank} />
                           </td>
                           <td className="px-6 py-4">
-                            <Link href={`/player/${entry.player.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                              <Avatar className="h-8 w-8 border border-border group-hover:border-primary transition-colors">
-                                <AvatarImage src={`https://mc-heads.net/avatar/${entry.player.minecraftUsername}/64`} />
-                                <AvatarFallback>{entry.player.minecraftUsername.substring(0, 2).toUpperCase()}</AvatarFallback>
-                              </Avatar>
-                              <span className="font-bold text-base group-hover:text-primary transition-colors">{entry.player.minecraftUsername}</span>
+                            <Link href={`/player/${entry.player.id}`} className="flex items-center gap-3 transition-all">
+                              <div className={`relative ${isTop ? 'holo-ring rounded-full' : ''}`}>
+                                <Avatar className={`h-10 w-10 border transition-all ${isTop ? 'border-primary/60 shadow-[0_0_12px_-2px_hsl(var(--primary)/0.6)]' : 'border-border group-hover:border-primary'}`}>
+                                  <AvatarImage src={`https://mc-heads.net/avatar/${entry.player.minecraftUsername}/64`} />
+                                  <AvatarFallback>{entry.player.minecraftUsername.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-bold text-base group-hover:text-primary transition-colors leading-tight">{entry.player.minecraftUsername}</span>
+                                <span className="text-[10px] uppercase tracking-widest text-muted-foreground/70 font-mono">#{String(entry.rank).padStart(4, '0')}</span>
+                              </div>
                             </Link>
                           </td>
-                          <td className="px-6 py-4 text-right font-mono font-bold text-lg text-primary">
-                            {entry.elo}
+                          <td className="px-6 py-4 text-right">
+                            <div className="inline-flex flex-col items-end">
+                              <span className={`font-mono font-bold text-xl ${isTop ? 'shimmer-text' : 'text-primary neon-text-primary'}`}>
+                                {entry.elo.toLocaleString()}
+                              </span>
+                              <span className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-mono">SCORE</span>
+                            </div>
                           </td>
                           <td className="px-6 py-4 text-center">
                             <TierBadge tier={entry.tier} />
@@ -193,14 +220,14 @@ export default function Leaderboard() {
                             <TopGamemodes stats={(entry.player as any).gamemodeStats ?? []} />
                           </td>
                           <td className="px-6 py-4 text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <span className="text-green-400 font-bold">{entry.wins}W</span>
-                              <span className="text-muted-foreground">-</span>
-                              <span className="text-red-400 font-bold">{entry.losses}L</span>
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/20 border border-border/50">
+                              <span className="text-green-400 font-bold font-mono">{entry.wins}<span className="text-[10px] ml-0.5 opacity-70">W</span></span>
+                              <span className="text-muted-foreground/40">/</span>
+                              <span className="text-red-400 font-bold font-mono">{entry.losses}<span className="text-[10px] ml-0.5 opacity-70">L</span></span>
                             </div>
                           </td>
                         </tr>
-                      ))
+                      );})
                     )}
                   </tbody>
                 </table>
@@ -234,7 +261,54 @@ export default function Leaderboard() {
             </div>
           </div>
         </div>
+        </div>
       </div>
     </Layout>
+  );
+}
+
+function StatTile({ icon, label, value, highlight }: { icon: React.ReactNode; label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className={`relative flex items-center justify-between p-3 rounded-lg border transition-all duration-300 hover:scale-[1.02] hover:border-primary/40 ${highlight ? 'bg-primary/5 border-primary/30' : 'bg-muted/20 border-border/50'}`}>
+      <div className="flex items-center gap-2.5">
+        <div className={`w-8 h-8 rounded-md flex items-center justify-center ${highlight ? 'bg-primary/20 text-primary' : 'bg-muted/40 text-muted-foreground'}`}>
+          {icon}
+        </div>
+        <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
+      </div>
+      <span className={`font-mono font-bold text-base ${highlight ? 'text-primary neon-text-primary' : 'text-foreground'}`}>{value}</span>
+    </div>
+  );
+}
+
+function RankBadge({ rank }: { rank: number }) {
+  if (rank === 1) {
+    return (
+      <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-yellow-400/30 to-yellow-600/10 border border-yellow-400/60 flex items-center justify-center shadow-[0_0_18px_rgba(234,179,8,0.45)] animate-pulse-glow">
+        <Crown className="w-5 h-5 text-yellow-400" />
+        <span className="absolute -bottom-1 -right-1 text-[9px] font-mono font-bold bg-yellow-400 text-black rounded px-1">1</span>
+      </div>
+    );
+  }
+  if (rank === 2) {
+    return (
+      <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-gray-200/25 to-gray-400/10 border border-gray-300/50 flex items-center justify-center shadow-[0_0_12px_rgba(229,231,235,0.25)]">
+        <Medal className="w-5 h-5 text-gray-200" />
+        <span className="absolute -bottom-1 -right-1 text-[9px] font-mono font-bold bg-gray-200 text-black rounded px-1">2</span>
+      </div>
+    );
+  }
+  if (rank === 3) {
+    return (
+      <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-amber-600/25 to-amber-800/10 border border-amber-600/50 flex items-center justify-center shadow-[0_0_12px_rgba(217,119,6,0.3)]">
+        <Award className="w-5 h-5 text-amber-500" />
+        <span className="absolute -bottom-1 -right-1 text-[9px] font-mono font-bold bg-amber-600 text-black rounded px-1">3</span>
+      </div>
+    );
+  }
+  return (
+    <div className="w-11 h-11 rounded-xl bg-muted/30 border border-border/50 flex items-center justify-center font-mono font-bold text-muted-foreground group-hover:border-primary/40 group-hover:text-primary transition-all">
+      {rank}
+    </div>
   );
 }

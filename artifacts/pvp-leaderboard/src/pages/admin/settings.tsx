@@ -34,7 +34,7 @@ const SECTION_FIELDS = {
     icon: Trophy,
     fields: [
       { key: "leaderboard_title", label: "Leaderboard Title", placeholder: "Global Rankings" },
-      { key: "leaderboard_description", label: "Leaderboard Description", placeholder: "Top players ranked by ELO..." },
+      { key: "leaderboard_description", label: "Leaderboard Description", placeholder: "Top players ranked by Score..." },
     ],
   },
   discord: {

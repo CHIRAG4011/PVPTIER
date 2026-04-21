@@ -105,7 +105,7 @@ export default function PlayerProfile() {
 
               <div className="flex flex-wrap justify-center md:justify-start gap-4">
                 <div className="bg-background/50 border border-border rounded-lg p-3 min-w-[120px] text-center">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">Global ELO</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">Global Score</p>
                   <p className="text-2xl font-bold font-mono text-primary">{player.elo}</p>
                 </div>
                 <div className="bg-background/50 border border-border rounded-lg p-3 min-w-[120px] text-center">
@@ -166,7 +166,7 @@ export default function PlayerProfile() {
                         <h3 className="font-bold text-lg capitalize">{stat.gamemode}</h3>
                       </div>
                       <div className="text-right">
-                        <span className="text-sm text-muted-foreground block">ELO</span>
+                        <span className="text-sm text-muted-foreground block">Score</span>
                         <span className="font-bold font-mono text-primary text-lg">{stat.elo}</span>
                       </div>
                     </div>

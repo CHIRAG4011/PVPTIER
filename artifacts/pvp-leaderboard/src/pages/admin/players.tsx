@@ -195,7 +195,7 @@ export default function AdminPlayers() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-display font-bold text-foreground">Player Management</h1>
-            <p className="text-muted-foreground">Adjust ELO, tiers, and manage player statistics.</p>
+            <p className="text-muted-foreground">Adjust Score, tiers, and manage player statistics.</p>
           </div>
 
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
@@ -274,7 +274,7 @@ export default function AdminPlayers() {
                   <div className="grid grid-cols-3 gap-4">
                     <FormField control={addForm.control} name="elo" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>ELO</FormLabel>
+                        <FormLabel>Score</FormLabel>
                         <FormControl><Input type="number" {...field} className="bg-background/50" /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -356,7 +356,7 @@ export default function AdminPlayers() {
             <TableHeader>
               <TableRow className="border-border hover:bg-transparent">
                 <TableHead>IGN</TableHead>
-                <TableHead>Global ELO</TableHead>
+                <TableHead>Global Score</TableHead>
                 <TableHead>W/L</TableHead>
                 <TableHead>Tier</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -425,7 +425,7 @@ export default function AdminPlayers() {
                               <div className="grid grid-cols-3 gap-4">
                                 <FormField control={editForm.control} name="elo" render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Global ELO</FormLabel>
+                                    <FormLabel>Global Score</FormLabel>
                                     <FormControl><Input type="number" {...field} /></FormControl>
                                   </FormItem>
                                 )} />

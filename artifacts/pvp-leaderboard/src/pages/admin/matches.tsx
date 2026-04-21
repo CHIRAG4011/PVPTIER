@@ -130,7 +130,7 @@ export default function AdminMatches() {
                 <TableHead>Winner</TableHead>
                 <TableHead>Loser</TableHead>
                 <TableHead>Gamemode</TableHead>
-                <TableHead>ELO Change</TableHead>
+                <TableHead>Score Change</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -237,7 +237,7 @@ export default function AdminMatches() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium">ELO Change</label>
+              <label className="text-sm font-medium">Score Change</label>
               <Input
                 type="number"
                 value={editForm.eloChange}

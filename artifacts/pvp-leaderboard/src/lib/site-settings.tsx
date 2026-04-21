@@ -13,7 +13,7 @@ const defaultSettings: SiteSettings = {
   homepage_hero_subtitle: "The most prestigious Minecraft PvP ranking platform. Battle top players, climb the tiers, and prove your worth in the ultimate arena.",
   homepage_season_badge: "Season 4 is currently active",
   leaderboard_title: "Global Rankings",
-  leaderboard_description: "Top players ranked by ELO across all gamemodes.",
+  leaderboard_description: "Top players ranked by Score across all gamemodes.",
   primary_color: "#00D4FF",
   accent_color: "#00FF87",
   social_twitter: "",

@@ -47,7 +47,7 @@ export default function AdminSeasons() {
   };
 
   const handleReset = (id: number, name: string) => {
-    if (confirm(`CRITICAL: Are you sure you want to end season ${name} and reset ALL player stats to 1000 ELO? This cannot be undone.`)) {
+    if (confirm(`CRITICAL: Are you sure you want to end season ${name} and reset ALL player stats to 1000 Score? This cannot be undone.`)) {
       resetMutation.mutate({ id }, {
         onSuccess: () => {
           toast.success("Season reset complete. All stats have been wiped.");
@@ -97,7 +97,7 @@ export default function AdminSeasons() {
           <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-red-500" />
           <div>
             <p className="font-bold mb-1">Warning about Season Resets</p>
-            <p className="text-sm opacity-90">Ending an active season will permanently reset all player global ELO and gamemode stats. Only perform this action at the agreed end of a competitive season.</p>
+            <p className="text-sm opacity-90">Ending an active season will permanently reset all player global Score and gamemode stats. Only perform this action at the agreed end of a competitive season.</p>
           </div>
         </div>
 

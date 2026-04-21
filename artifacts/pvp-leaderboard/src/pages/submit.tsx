@@ -101,7 +101,7 @@ function PlayerSearchInput({ value, onChange }: { value: string; onChange: (v: s
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Badge variant="outline" className="text-xs font-mono">{player.tier}</Badge>
-                    <span>{player.elo} ELO</span>
+                    <span>{player.elo} Score</span>
                   </div>
                 </button>
               ))}

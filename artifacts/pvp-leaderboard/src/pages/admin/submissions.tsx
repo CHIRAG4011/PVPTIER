@@ -74,7 +74,7 @@ export default function AdminSubmissions() {
       });
       const body = await res.json();
       if (res.ok) {
-        toast.success("Match approved — ELO updated.");
+        toast.success("Match approved — Score updated.");
         setApproving(null);
         setChosenWinner("");
         refetch();
@@ -233,7 +233,7 @@ export default function AdminSubmissions() {
               <Gavel className="w-5 h-5 text-primary" /> Decide the winner
             </DialogTitle>
             <DialogDescription>
-              Watch the video, then pick which player won. Approving updates ELO automatically.
+              Watch the video, then pick which player won. Approving updates Score automatically.
             </DialogDescription>
           </DialogHeader>
           {approving && (
@@ -269,7 +269,7 @@ export default function AdminSubmissions() {
               </div>
               <div className="flex gap-3 pt-2">
                 <Button onClick={handleApprove} disabled={submitting || !chosenWinner} className="flex-1 gap-1.5">
-                  <Check className="w-4 h-4" /> {submitting ? "Approving..." : "Approve & Update ELO"}
+                  <Check className="w-4 h-4" /> {submitting ? "Approving..." : "Approve & Update Score"}
                 </Button>
                 <Button variant="outline" onClick={() => { setApproving(null); setChosenWinner(""); }}>Cancel</Button>
               </div>

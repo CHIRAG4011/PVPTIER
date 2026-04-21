@@ -190,6 +190,99 @@
   box-shadow: 0 0 15px -3px hsl(var(--primary) / 0.4);
 }
 
+/* === Futuristic animations === */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 6px hsl(var(--primary) / 0.4), 0 0 16px hsl(var(--primary) / 0.2); }
+  50%      { box-shadow: 0 0 14px hsl(var(--primary) / 0.7), 0 0 28px hsl(var(--primary) / 0.35); }
+}
+.animate-pulse-glow { animation: pulse-glow 2.4s ease-in-out infinite; }
+
+@keyframes scanline {
+  0%   { transform: translateX(-100%); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+.scanline-overlay { position: relative; overflow: hidden; }
+.scanline-overlay::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(110deg, transparent 0%, transparent 40%, hsl(var(--primary) / 0.18) 50%, transparent 60%, transparent 100%);
+  transform: translateX(-100%);
+  pointer-events: none;
+}
+.scanline-overlay:hover::after { animation: scanline 1.1s ease-out; }
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 6s ease-in-out infinite;
+}
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+.animate-float { animation: float-y 3s ease-in-out infinite; }
+
+@keyframes shimmer-text {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+.shimmer-text {
+  background: linear-gradient(90deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 30%, hsl(var(--primary)) 60%, hsl(var(--accent)) 90%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-text 4s linear infinite;
+}
+
+@keyframes border-spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.holo-ring {
+  position: relative;
+  isolation: isolate;
+}
+.holo-ring::before {
+  content: "";
+  position: absolute; inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from 0deg, transparent 0deg, hsl(var(--primary)) 90deg, transparent 180deg, hsl(var(--accent)) 270deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: border-spin 6s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes count-pop {
+  0%   { transform: scale(0.85); opacity: 0; filter: blur(4px); }
+  60%  { transform: scale(1.05); opacity: 1; filter: blur(0); }
+  100% { transform: scale(1); }
+}
+.animate-count-pop { animation: count-pop 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@keyframes row-rise {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.animate-row-rise { animation: row-rise 0.45s ease-out both; }
+
+.grid-bg {
+  background-image:
+    linear-gradient(hsl(var(--primary) / 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--primary) / 0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: -1px -1px;
+}
+
 @layer utilities {
   input[type="search"]::-webkit-search-cancel-button {
     @apply hidden;

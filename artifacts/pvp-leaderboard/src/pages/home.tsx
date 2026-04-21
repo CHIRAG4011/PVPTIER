@@ -170,7 +170,7 @@ export default function Home() {
                         </div>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
                           <span className="capitalize font-medium text-foreground">{gamemode}</span>
-                          <span>{player.elo} ELO</span>
+                          <span>{player.elo} Score</span>
                         </div>
                       </div>
                     </div>
