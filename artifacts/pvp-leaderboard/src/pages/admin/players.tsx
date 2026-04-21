@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Trophy, Edit, RotateCcw, Trash2, ChevronLeft, ChevronRight, UserPlus } from "lucide-react";
+import { Search, Trophy, Edit, RotateCcw, Trash2, ChevronLeft, ChevronRight, UserPlus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { TierBadge } from "@/components/ui/tier-badge";
 import { GamemodeIcon } from "@/components/ui/gamemode-icon";
@@ -211,6 +211,33 @@ export default function AdminPlayers() {
             <p className="text-muted-foreground">Adjust Score, tiers, and manage player statistics.</p>
           </div>
 
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={async () => {
+                const token = localStorage.getItem("pvp_token");
+                const t = toast.loading("Syncing users to players...");
+                try {
+                  const res = await fetch(apiUrl("/api/admin/players/sync-users"), {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  const data = await res.json();
+                  if (res.ok) {
+                    toast.success(`Synced: ${data.created} created, ${data.linked} linked, ${data.skipped} skipped`, { id: t });
+                    refetch();
+                  } else {
+                    toast.error(data.message || "Sync failed", { id: t });
+                  }
+                } catch {
+                  toast.error("Network error", { id: t });
+                }
+              }}
+            >
+              <RefreshCw className="w-4 h-4" />
+              Sync Users
+            </Button>
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
@@ -350,6 +377,7 @@ export default function AdminPlayers() {
               </Form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         <div className="glass-card p-4 rounded-xl border-border flex items-center">

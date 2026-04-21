@@ -171,6 +171,59 @@ function buildGamemodeStats(gamemodeTiers?: Record<string, string | null | undef
   return stats;
 }
 
+router.post("/admin/players/sync-users", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const adminUser = (req as Request & { user?: JwtPayload }).user!;
+
+  const users = await User.find({});
+  let created = 0;
+  let linked = 0;
+  let skipped = 0;
+
+  for (const u of users) {
+    const playerName = ((u as any).minecraftUsername ?? u.username ?? "").trim();
+    if (!playerName) { skipped++; continue; }
+
+    const byUserId = await Player.findOne({ userId: u._id.toString() });
+    if (byUserId) { skipped++; continue; }
+
+    const byName = await Player.findOne({ minecraftUsername: { $regex: `^${playerName}$`, $options: "i" } });
+    if (byName) {
+      if (!byName.userId) {
+        byName.userId = u._id.toString();
+        await byName.save();
+        linked++;
+      } else {
+        skipped++;
+      }
+      continue;
+    }
+
+    await Player.create({
+      userId: u._id.toString(),
+      minecraftUsername: playerName,
+      tier: "LT1",
+      elo: 1000,
+      wins: 0,
+      losses: 0,
+      winStreak: 0,
+      region: "NA",
+      badges: [],
+      gamemodeStats: [],
+    });
+    created++;
+  }
+
+  await AdminLog.create({
+    adminId: adminUser.userId,
+    adminUsername: adminUser.username,
+    action: "sync_players",
+    target: "players",
+    details: `Synced users → players. created=${created}, linked=${linked}, skipped=${skipped}, total=${users.length}`,
+  });
+
+  res.json({ success: true, created, linked, skipped, total: users.length });
+});
+
 router.post("/admin/players", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
 
