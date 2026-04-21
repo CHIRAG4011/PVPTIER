@@ -39,3 +39,5 @@ export * from "./models/SiteSetting";
 export * from "./models/CustomRole";
 export * from "./models/UserCustomRole";
 export * from "./models/PasswordReset";
+export * from "./models/Challenge";
+export * from "./models/Notification";

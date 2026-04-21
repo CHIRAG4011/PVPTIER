@@ -1,7 +1,8 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Copy, Menu, ShieldAlert, Swords, X, Settings } from "lucide-react";
+import { Copy, Menu, ShieldAlert, Swords, X, Settings, Plus, Inbox } from "lucide-react";
+import { NotificationsBell } from "@/components/NotificationsBell";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -89,6 +90,15 @@ export function Navbar() {
             </Button>
           )}
 
+          {user && (
+            <>
+              <Button size="sm" className="gap-1.5 h-9" asChild>
+                <Link href="/create-match"><Plus className="w-4 h-4" /> Create Match</Link>
+              </Button>
+              <NotificationsBell />
+            </>
+          )}
+
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -113,7 +123,15 @@ export function Navbar() {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem asChild>
-                  <Link href="/submit" className="cursor-pointer">Submit Match</Link>
+                  <Link href="/create-match" className="cursor-pointer">Create Match</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/my-challenges" className="cursor-pointer flex items-center">
+                    <Inbox className="w-4 h-4 mr-2" /> My Matches
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/submit" className="cursor-pointer">Submit Match Video</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/tier-test" className="cursor-pointer">Apply for Tier Test</Link>
@@ -217,7 +235,13 @@ export function Navbar() {
                 </Button>
               )}
               <Button variant="ghost" size="sm" className="justify-start" asChild onClick={() => setMobileMenuOpen(false)}>
-                <Link href="/submit">Submit Match</Link>
+                <Link href="/create-match">Create Match</Link>
+              </Button>
+              <Button variant="ghost" size="sm" className="justify-start" asChild onClick={() => setMobileMenuOpen(false)}>
+                <Link href="/my-challenges">My Matches</Link>
+              </Button>
+              <Button variant="ghost" size="sm" className="justify-start" asChild onClick={() => setMobileMenuOpen(false)}>
+                <Link href="/submit">Submit Match Video</Link>
               </Button>
               <Button variant="ghost" size="sm" className="justify-start" asChild onClick={() => setMobileMenuOpen(false)}>
                 <Link href="/tier-test">Apply for Tier Test</Link>

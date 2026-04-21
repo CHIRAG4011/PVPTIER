@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { useGetGlobalStats, useGetRecentActivity, useGetTopPlayers, useListAnnouncements } from "@workspace/api-client-react";
 import { GamemodeIcon } from "@/components/ui/gamemode-icon";
 import { TierBadge } from "@/components/ui/tier-badge";
-import { Swords, Trophy, Users, ShieldAlert, ArrowRight, Skull, Globe, Zap, Flame, Leaf, Wind, Axe, History, Edit, Trash2 } from "lucide-react";
+import { Swords, Trophy, Users, ShieldAlert, ArrowRight, Skull, Globe, Zap, Flame, Leaf, Wind, Axe, History, Edit, Trash2, Server, Clock, Plus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { apiUrl } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useSiteSettings } from "@/lib/site-settings";
 import { useAuth } from "@/lib/auth";
-import { apiUrl } from "@/lib/api";
 import { toast } from "sonner";
 
 export default function Home() {
@@ -22,6 +23,15 @@ export default function Home() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const isAdmin = user && ['admin', 'superadmin', 'moderator'].includes(user.role);
+
+  const { data: recentChallenges, isLoading: challengesLoading } = useQuery<{ challenges: any[] }>({
+    queryKey: ["recent-challenges"],
+    queryFn: async () => {
+      const res = await fetch(apiUrl("/api/challenges/recent"));
+      return res.json();
+    },
+    refetchInterval: 60000,
+  });
 
   const handleDeleteMatch = async (matchId: string) => {
     if (!confirm("Delete this match? This cannot be undone.")) return;
@@ -217,12 +227,67 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Recent Activity */}
+            {/* Recently Created Matches (Challenges/Queue) */}
+            <div className="glass-card rounded-xl border-border overflow-hidden">
+              <div className="bg-muted/30 p-4 border-b border-border flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-primary" />
+                  <h3 className="font-bold font-display">Recently Created Matches</h3>
+                </div>
+                {user && (
+                  <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-primary" asChild>
+                    <Link href="/create-match">+ Create</Link>
+                  </Button>
+                )}
+              </div>
+              <div className="p-0">
+                {challengesLoading ? (
+                  <div className="p-4 space-y-3">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                  </div>
+                ) : (recentChallenges?.challenges?.length ?? 0) === 0 ? (
+                  <div className="p-6 text-center text-muted-foreground text-sm">No matches in the queue yet.</div>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {recentChallenges!.challenges.slice(0, 5).map((c: any) => {
+                      const statusColor =
+                        c.status === "pending" ? "bg-yellow-500/15 text-yellow-400 border-yellow-500/30" :
+                        c.status === "accepted" ? "bg-green-500/15 text-green-400 border-green-500/30" :
+                        c.status === "rejected" ? "bg-red-500/15 text-red-400 border-red-500/30" :
+                        c.status === "completed" ? "bg-primary/15 text-primary border-primary/30" :
+                        "bg-muted text-muted-foreground border-border";
+                      return (
+                        <div key={c.id} className="p-3 hover:bg-muted/20 transition-colors">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <div className="flex items-center gap-2 text-sm min-w-0">
+                              <GamemodeIcon gamemode={c.gamemode} size={14} />
+                              <span className="font-medium truncate">{c.challengerMcUsername}</span>
+                              <span className="text-muted-foreground text-xs">vs</span>
+                              <span className="font-medium truncate">{c.opponentUsername}</span>
+                            </div>
+                            <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded border shrink-0 ${statusColor}`}>
+                              {c.status}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                            <span className="flex items-center gap-1"><Server className="w-3 h-3" />{c.server}</span>
+                            <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(c.scheduledTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Recent Match Results (Winners / Losers) */}
             <div className="glass-card rounded-xl border-border overflow-hidden">
               <div className="bg-muted/30 p-4 border-b border-border flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <History className="w-5 h-5 text-primary" />
-                  <h3 className="font-bold font-display">Recent Matches</h3>
+                  <h3 className="font-bold font-display">Recent Match Results</h3>
                 </div>
                 {isAdmin && (
                   <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-primary" asChild>
@@ -239,7 +304,7 @@ export default function Home() {
                     <Skeleton className="h-10 w-full" />
                   </div>
                 ) : recent?.recentMatches.length === 0 ? (
-                  <div className="p-6 text-center text-muted-foreground text-sm">No recent matches</div>
+                  <div className="p-6 text-center text-muted-foreground text-sm">No completed matches yet.</div>
                 ) : (
                   <div className="divide-y divide-border">
                     {recent?.recentMatches.slice(0, 5).map((match) => (

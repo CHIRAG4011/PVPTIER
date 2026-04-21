@@ -12,6 +12,8 @@ import PlayerProfile from "@/pages/player-profile";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import SubmitMatch from "@/pages/submit";
+import CreateMatch from "@/pages/create-match";
+import MyChallenges from "@/pages/my-challenges";
 import Tickets from "@/pages/tickets";
 import TicketDetail from "@/pages/ticket-detail";
 import Announcements from "@/pages/announcements";
@@ -53,6 +55,8 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/submit" component={SubmitMatch} />
+      <Route path="/create-match" component={CreateMatch} />
+      <Route path="/my-challenges" component={MyChallenges} />
       <Route path="/tickets" component={Tickets} />
       <Route path="/tickets/:id" component={TicketDetail} />
       <Route path="/announcements" component={Announcements} />

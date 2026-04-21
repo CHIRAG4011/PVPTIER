@@ -1,11 +1,18 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { Submission, Player, AdminLog, User, Match } from "@workspace/db";
-import { CreateSubmissionBody, ListSubmissionsQueryParams } from "@workspace/api-zod";
+import { ListSubmissionsQueryParams } from "@workspace/api-zod";
 import { requireAuth, requireAdmin } from "../lib/auth";
 import type { JwtPayload } from "../lib/auth";
 import mongoose from "mongoose";
+import { z } from "zod";
 
 const router: IRouter = Router();
+
+const CreateSubmissionBody = z.object({
+  opponentUsername: z.string().min(1),
+  gamemode: z.string().min(1),
+  evidence: z.string().url(),
+});
 
 router.post("/submissions", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = (req as Request & { user?: JwtPayload }).user!;
@@ -15,12 +22,7 @@ router.post("/submissions", requireAuth, async (req: Request, res: Response): Pr
     return;
   }
 
-  const { opponentUsername, gamemode, result, evidence } = parsed.data;
-
-  if (!evidence) {
-    res.status(400).json({ error: "evidence_required", message: "A screenshot or video link is required to submit a match." });
-    return;
-  }
+  const { opponentUsername, gamemode, evidence } = parsed.data;
 
   const opponent = await Player.findOne({ minecraftUsername: { $regex: `^${opponentUsername}$`, $options: "i" } });
   if (!opponent) {
@@ -33,7 +35,7 @@ router.post("/submissions", requireAuth, async (req: Request, res: Response): Pr
     submitterUsername: user.username,
     opponentUsername: opponent.minecraftUsername,
     gamemode,
-    result,
+    result: null,
     status: "pending",
     evidence,
   });
@@ -48,7 +50,7 @@ router.get("/submissions", requireAdmin, async (req: Request, res: Response): Pr
   const offset = (page - 1) * limit;
   const status = parsed.success ? parsed.data.status : undefined;
 
-  const filter: any = {};
+  const filter: Record<string, unknown> = {};
   if (status) filter.status = status;
 
   const [submissions, total] = await Promise.all([
@@ -64,11 +66,21 @@ router.get("/submissions", requireAdmin, async (req: Request, res: Response): Pr
   });
 });
 
+const ApproveBody = z.object({
+  winner: z.enum(["submitter", "opponent"]),
+});
+
 router.post("/submissions/:id/approve", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
   const { id } = req.params;
   if (!mongoose.Types.ObjectId.isValid(id as string)) {
     res.status(400).json({ error: "invalid_id", message: "Invalid submission ID" });
+    return;
+  }
+
+  const parsed = ApproveBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "validation_error", message: "You must pick the winner (submitter or opponent)." });
     return;
   }
 
@@ -78,33 +90,37 @@ router.post("/submissions/:id/approve", requireAdmin, async (req: Request, res: 
     return;
   }
 
-  await Submission.findByIdAndUpdate(id, { status: "approved", reviewedBy: adminUser.userId });
-
   const submitterUser = await User.findById(submission.submitterId);
   const submitterMinecraftIGN = submitterUser?.minecraftUsername || submission.submitterUsername;
 
-  const winner = await Player.findOne({ minecraftUsername: { $regex: `^${submitterMinecraftIGN}$`, $options: "i" } });
-  const loser = await Player.findOne({ minecraftUsername: { $regex: `^${submission.opponentUsername}$`, $options: "i" } });
+  const submitterPlayer = await Player.findOne({ minecraftUsername: { $regex: `^${submitterMinecraftIGN}$`, $options: "i" } });
+  const opponentPlayer = await Player.findOne({ minecraftUsername: { $regex: `^${submission.opponentUsername}$`, $options: "i" } });
+
+  const winner = parsed.data.winner === "submitter" ? submitterPlayer : opponentPlayer;
+  const loser = parsed.data.winner === "submitter" ? opponentPlayer : submitterPlayer;
+  const winnerUsername = parsed.data.winner === "submitter" ? submitterMinecraftIGN : submission.opponentUsername;
+  const loserUsername = parsed.data.winner === "submitter" ? submission.opponentUsername : submitterMinecraftIGN;
+
+  await Submission.findByIdAndUpdate(id, {
+    status: "approved",
+    reviewedBy: adminUser.userId,
+    result: parsed.data.winner === "submitter" ? "win" : "loss",
+  });
 
   const eloChange = 25;
 
   if (winner) {
-    await Player.findByIdAndUpdate(winner._id, {
-      $inc: { wins: 1, elo: eloChange, winStreak: 1 },
-    });
+    await Player.findByIdAndUpdate(winner._id, { $inc: { wins: 1, elo: eloChange, winStreak: 1 } });
   }
-
   if (loser) {
-    await Player.findByIdAndUpdate(loser._id, {
-      $inc: { losses: 1, elo: -eloChange },
-    });
+    await Player.findByIdAndUpdate(loser._id, { $inc: { losses: 1, elo: -eloChange, winStreak: 0 } });
   }
 
   await Match.create({
-    winnerId: winner?._id?.toString() ?? null,
-    loserId: loser?._id?.toString() ?? null,
-    winnerUsername: winner?.minecraftUsername ?? submitterMinecraftIGN,
-    loserUsername: loser?.minecraftUsername ?? submission.opponentUsername,
+    winnerId: winner?._id?.toString() ?? "unknown",
+    loserId: loser?._id?.toString() ?? "unknown",
+    winnerUsername,
+    loserUsername,
     gamemode: submission.gamemode,
     eloChange,
     playedAt: new Date(),
@@ -115,7 +131,7 @@ router.post("/submissions/:id/approve", requireAdmin, async (req: Request, res: 
     adminUsername: adminUser.username,
     action: "approve_submission",
     target: `submission:${id}`,
-    details: `Approved submission by ${submission.submitterUsername}`,
+    details: `Approved submission by ${submission.submitterUsername} — ${winnerUsername} defeated ${loserUsername}`,
   });
 
   res.json({ success: true, message: "Submission approved" });

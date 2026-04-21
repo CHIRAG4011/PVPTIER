@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Edit, Trash2, ChevronLeft, ChevronRight, Plus, Swords } from "lucide-react";
+import { Search, Edit, Trash2, ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { toast } from "sonner";
 import { GamemodeIcon } from "@/components/ui/gamemode-icon";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -28,12 +28,10 @@ export default function AdminMatches() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [editingMatch, setEditingMatch] = useState<any>(null);
-  const [addOpen, setAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
   const [editForm, setEditForm] = useState({ winnerUsername: "", loserUsername: "", gamemode: "", eloChange: 25 });
-  const [addForm, setAddForm] = useState({ winnerUsername: "", loserUsername: "", gamemode: "sword", eloChange: 25 });
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin-matches", page, search],
@@ -98,43 +96,19 @@ export default function AdminMatches() {
     }
   };
 
-  const handleAddMatch = async () => {
-    setSaving(true);
-    const token = localStorage.getItem("pvp_token");
-    try {
-      const res = await fetch(apiUrl("/api/admin/matches"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(addForm),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success(`Match created: ${addForm.winnerUsername} defeated ${addForm.loserUsername}`);
-        setAddOpen(false);
-        setAddForm({ winnerUsername: "", loserUsername: "", gamemode: "sword", eloChange: 25 });
-        refetch();
-      } else {
-        toast.error(data.message || "Failed to create match");
-      }
-    } catch {
-      toast.error("Network error");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-display font-bold text-foreground">Match Management</h1>
-            <p className="text-muted-foreground">View, edit, and delete match records.</p>
-          </div>
-          <Button className="gap-2" onClick={() => setAddOpen(true)}>
-            <Plus className="w-4 h-4" />
-            Create Match
-          </Button>
+        <div>
+          <h1 className="text-3xl font-display font-bold text-foreground">Match Records</h1>
+          <p className="text-muted-foreground">Read-only history of every approved match. Players create matches; admins only review and audit.</p>
+        </div>
+
+        <div className="glass-card p-4 rounded-xl border-border flex items-start gap-3 text-sm">
+          <Info className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+          <p className="text-muted-foreground">
+            Matches are no longer created from the admin panel. They appear here automatically once a player submits evidence and you approve it from <strong className="text-foreground">Submissions</strong>. Use this page to inspect, edit metadata, or delete bad records.
+          </p>
         </div>
 
         <div className="glass-card p-4 rounded-xl border-border flex items-center">
@@ -189,7 +163,7 @@ export default function AdminMatches() {
                     </TableCell>
                     <TableCell className="font-mono text-primary font-bold">±{m.eloChange}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {new Date(m.playedAt).toLocaleDateString()}
+                      {new Date(m.playedAt).toLocaleString()}
                     </TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button variant="outline" size="sm" onClick={() => handleEditClick(m)}>
@@ -276,61 +250,6 @@ export default function AdminMatches() {
                 {saving ? "Saving..." : "Save Changes"}
               </Button>
               <Button variant="outline" onClick={() => setEditingMatch(null)}>Cancel</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="bg-card border-border max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Swords className="w-5 h-5 text-primary" />
-              Create Match
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Winner IGN</label>
-              <Input
-                value={addForm.winnerUsername}
-                onChange={e => setAddForm(f => ({ ...f, winnerUsername: e.target.value }))}
-                placeholder="WinnerPlayer"
-                className="bg-background/50 mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Loser IGN</label>
-              <Input
-                value={addForm.loserUsername}
-                onChange={e => setAddForm(f => ({ ...f, loserUsername: e.target.value }))}
-                placeholder="LoserPlayer"
-                className="bg-background/50 mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Gamemode</label>
-              <Select value={addForm.gamemode} onValueChange={v => setAddForm(f => ({ ...f, gamemode: v }))}>
-                <SelectTrigger className="bg-background/50 mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {GAMEMODES.map(gm => <SelectItem key={gm} value={gm} className="capitalize">{gm}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium">ELO Change</label>
-              <Input
-                type="number"
-                value={addForm.eloChange}
-                onChange={e => setAddForm(f => ({ ...f, eloChange: Number(e.target.value) }))}
-                className="bg-background/50 mt-1"
-              />
-            </div>
-            <div className="flex gap-3 pt-2">
-              <Button onClick={handleAddMatch} disabled={saving} className="flex-1">
-                {saving ? "Creating..." : "Create Match"}
-              </Button>
-              <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
             </div>
           </div>
         </DialogContent>

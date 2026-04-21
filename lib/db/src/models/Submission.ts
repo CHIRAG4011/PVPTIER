@@ -5,7 +5,7 @@ export interface ISubmission extends Document {
   submitterUsername: string;
   opponentUsername: string;
   gamemode: string;
-  result: string;
+  result?: string | null;
   status: "pending" | "approved" | "rejected";
   evidence?: string | null;
   reviewedBy?: string | null;
@@ -19,7 +19,7 @@ const SubmissionSchema = new Schema<ISubmission>(
     submitterUsername: { type: String, required: true },
     opponentUsername: { type: String, required: true },
     gamemode: { type: String, required: true },
-    result: { type: String, required: true },
+    result: { type: String, default: null },
     status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
     evidence: { type: String, default: null },
     reviewedBy: { type: String, default: null },
