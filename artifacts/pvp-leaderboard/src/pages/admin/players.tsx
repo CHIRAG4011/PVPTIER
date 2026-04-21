@@ -297,7 +297,7 @@ export default function AdminPlayers() {
 
                   <div className="pt-2 border-t border-border/50">
                     <div className="flex items-center justify-between mb-3">
-                      <FormLabel className="text-base">Gamemode Tiers</FormLabel>
+                      <span className="text-base font-medium">Gamemode Tiers</span>
                       <span className="text-xs text-muted-foreground">Set tier per gamemode (or leave as None)</span>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
