@@ -27,6 +27,7 @@ const GAMEMODE_LABELS: Record<string, string> = {
 const GAMEMODE_TIER_OPTIONS = ["none", ...TIERS] as const;
 
 const gamemodeTierSchema = z.record(z.string(), z.enum(GAMEMODE_TIER_OPTIONS)).optional();
+const gamemodeScoreSchema = z.record(z.string(), z.coerce.number().int()).optional();
 
 const updateSchema = z.object({
   elo: z.coerce.number().int(),
@@ -34,6 +35,7 @@ const updateSchema = z.object({
   losses: z.coerce.number().int().min(0),
   tier: z.enum(TIERS),
   gamemodeTiers: gamemodeTierSchema,
+  gamemodeScores: gamemodeScoreSchema,
 });
 
 const addSchema = z.object({
@@ -51,6 +53,12 @@ const addSchema = z.object({
 const emptyGamemodeTiers = (): Record<string, "none" | typeof TIERS[number]> => {
   const o: any = {};
   GAMEMODES.forEach(g => { o[g] = "none"; });
+  return o;
+};
+
+const emptyGamemodeScores = (): Record<string, number> => {
+  const o: Record<string, number> = {};
+  GAMEMODES.forEach(g => { o[g] = 1000; });
   return o;
 };
 
@@ -72,7 +80,7 @@ export default function AdminPlayers() {
 
   const editForm = useForm<z.infer<typeof updateSchema>>({
     resolver: zodResolver(updateSchema),
-    defaultValues: { elo: 1000, wins: 0, losses: 0, tier: "LT1", gamemodeTiers: emptyGamemodeTiers() },
+    defaultValues: { elo: 1000, wins: 0, losses: 0, tier: "LT1", gamemodeTiers: emptyGamemodeTiers(), gamemodeScores: emptyGamemodeScores() },
   });
 
   const addForm = useForm<z.infer<typeof addSchema>>({
@@ -93,8 +101,12 @@ export default function AdminPlayers() {
   const handleEditClick = (player: any) => {
     setEditingPlayer(player);
     const tiers = emptyGamemodeTiers();
+    const scores = emptyGamemodeScores();
     (player.gamemodeStats ?? []).forEach((s: any) => {
-      if (s?.gamemode && s.tier && tiers[s.gamemode] !== undefined) tiers[s.gamemode] = s.tier;
+      if (s?.gamemode && tiers[s.gamemode] !== undefined) {
+        if (s.tier) tiers[s.gamemode] = s.tier;
+        if (typeof s.elo === "number") scores[s.gamemode] = s.elo;
+      }
     });
     editForm.reset({
       elo: player.elo,
@@ -102,6 +114,7 @@ export default function AdminPlayers() {
       losses: player.losses,
       tier: player.tier as any,
       gamemodeTiers: tiers,
+      gamemodeScores: scores,
     });
   };
 
@@ -444,33 +457,51 @@ export default function AdminPlayers() {
                               </div>
                               <div className="pt-2 border-t border-border/50">
                                 <div className="flex items-center justify-between mb-3">
-                                  <span className="text-sm font-medium">Gamemode Tiers</span>
-                                  <span className="text-xs text-muted-foreground">Set or clear per gamemode</span>
+                                  <span className="text-sm font-medium">Gamemode Tiers & Scores</span>
+                                  <span className="text-xs text-muted-foreground">Tier and score per gamemode</span>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 gap-3">
                                   {GAMEMODES.map(gm => (
-                                    <FormField
-                                      key={gm}
-                                      control={editForm.control}
-                                      name={`gamemodeTiers.${gm}` as any}
-                                      render={({ field }) => (
-                                        <FormItem>
-                                          <FormLabel className="flex items-center gap-2 text-xs">
-                                            <GamemodeIcon gamemode={gm} className="w-3.5 h-3.5" />
-                                            {GAMEMODE_LABELS[gm]}
-                                          </FormLabel>
-                                          <Select onValueChange={field.onChange} value={(field.value as string) ?? "none"}>
+                                    <div key={gm} className="grid grid-cols-[1fr_1fr_120px] gap-2 items-end">
+                                      <div className="flex items-center gap-2 text-xs h-9 px-2 rounded-md bg-muted/30 border border-border/50">
+                                        <GamemodeIcon gamemode={gm} className="w-3.5 h-3.5" />
+                                        <span className="font-medium">{GAMEMODE_LABELS[gm]}</span>
+                                      </div>
+                                      <FormField
+                                        control={editForm.control}
+                                        name={`gamemodeTiers.${gm}` as any}
+                                        render={({ field }) => (
+                                          <FormItem className="space-y-0">
+                                            <Select onValueChange={field.onChange} value={(field.value as string) ?? "none"}>
+                                              <FormControl>
+                                                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                                              </FormControl>
+                                              <SelectContent>
+                                                <SelectItem value="none"><span className="text-muted-foreground">None</span></SelectItem>
+                                                {TIERS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                              </SelectContent>
+                                            </Select>
+                                          </FormItem>
+                                        )}
+                                      />
+                                      <FormField
+                                        control={editForm.control}
+                                        name={`gamemodeScores.${gm}` as any}
+                                        render={({ field }) => (
+                                          <FormItem className="space-y-0">
                                             <FormControl>
-                                              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                                              <Input
+                                                type="number"
+                                                placeholder="Score"
+                                                className="h-9 text-right"
+                                                {...field}
+                                                value={field.value ?? ""}
+                                              />
                                             </FormControl>
-                                            <SelectContent>
-                                              <SelectItem value="none"><span className="text-muted-foreground">None</span></SelectItem>
-                                              {TIERS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                                            </SelectContent>
-                                          </Select>
-                                        </FormItem>
-                                      )}
-                                    />
+                                          </FormItem>
+                                        )}
+                                      />
+                                    </div>
                                   ))}
                                 </div>
                               </div>

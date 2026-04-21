@@ -230,19 +230,31 @@ router.patch("/admin/players/:id/stats", requireAdmin, async (req: Request, res:
   if (parsed.data.tier !== undefined) updates.tier = parsed.data.tier;
 
   const rawTiers = (req.body as any)?.gamemodeTiers as Record<string, string | null | undefined> | undefined;
-  if (rawTiers && typeof rawTiers === "object") {
+  const rawScores = (req.body as any)?.gamemodeScores as Record<string, number | string | null | undefined> | undefined;
+  if ((rawTiers && typeof rawTiers === "object") || (rawScores && typeof rawScores === "object")) {
     const existing = await Player.findById(id);
     const current: any[] = existing?.gamemodeStats ? JSON.parse(JSON.stringify(existing.gamemodeStats)) : [];
     const map = new Map<string, any>(current.map(s => [s.gamemode, s]));
     for (const gm of SUPPORTED_GAMEMODES) {
-      if (!(gm in rawTiers)) continue;
-      const t = rawTiers[gm];
-      if (!t || t === "none") {
+      const tierProvided = rawTiers && gm in rawTiers;
+      const scoreProvided = rawScores && gm in rawScores;
+      if (!tierProvided && !scoreProvided) continue;
+
+      const t = tierProvided ? rawTiers![gm] : undefined;
+      if (tierProvided && (!t || t === "none")) {
         map.delete(gm);
-      } else {
-        const prev = map.get(gm) ?? { gamemode: gm, wins: 0, losses: 0, elo: 1000 };
-        map.set(gm, { ...prev, gamemode: gm, tier: t });
+        continue;
       }
+
+      const prev = map.get(gm) ?? { gamemode: gm, wins: 0, losses: 0, elo: 1000 };
+      const next = { ...prev, gamemode: gm };
+      if (tierProvided && t && t !== "none") next.tier = t;
+      if (scoreProvided) {
+        const raw = rawScores![gm];
+        const num = typeof raw === "number" ? raw : raw === null || raw === undefined || raw === "" ? NaN : Number(raw);
+        if (Number.isFinite(num)) next.elo = Math.trunc(num);
+      }
+      map.set(gm, next);
     }
     updates.gamemodeStats = Array.from(map.values());
   }
