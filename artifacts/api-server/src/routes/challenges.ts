@@ -32,7 +32,12 @@ router.post("/challenges", requireAuth, async (req: Request, res: Response): Pro
   }
 
   const challengerUser = await User.findById(user.userId);
-  const challengerMc = challengerUser?.minecraftUsername;
+  let challengerMc = challengerUser?.minecraftUsername ?? null;
+  if (!challengerMc) {
+    // Fallback: look for a Player linked to this user, or use the username.
+    const linkedPlayer = await Player.findOne({ userId: user.userId });
+    challengerMc = linkedPlayer?.minecraftUsername ?? challengerUser?.username ?? null;
+  }
   if (!challengerMc) {
     res.status(400).json({ error: "no_minecraft_username", message: "Set your Minecraft IGN in your profile before creating a match." });
     return;
