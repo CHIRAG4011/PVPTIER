@@ -145,23 +145,23 @@ export default function Leaderboard() {
               <div className="pointer-events-none absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-primary/40 rounded-br-xl" />
 
               <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left table-fixed">
+                <table className="w-full text-sm text-center table-fixed">
                   <colgroup>
                     <col className="w-[80px]" />
-                    <col />
+                    <col className="w-[220px]" />
                     <col className="w-[110px]" />
                     <col className="w-[140px]" />
                     <col className="w-[90px]" />
-                    <col className="w-[110px]" />
+                    <col />
                   </colgroup>
                   <thead className="text-xs uppercase bg-gradient-to-r from-muted/40 via-primary/5 to-muted/40 text-muted-foreground border-b border-primary/20">
                     <tr>
                       <th className="px-4 py-4 font-bold tracking-widest text-center">Rank</th>
-                      <th className="px-4 py-4 font-bold tracking-widest">Player</th>
+                      <th className="px-4 py-4 font-bold tracking-widest text-center">Player</th>
                       <th className="px-4 py-4 font-bold tracking-widest text-center">Score</th>
                       <th className="px-4 py-4 font-bold tracking-widest text-center">W / L</th>
                       <th className="px-4 py-4 font-bold tracking-widest text-center">Region</th>
-                      <th className="px-4 py-4 font-bold tracking-widest text-center">Tier</th>
+                      <th className="px-4 py-4 font-bold tracking-widest text-center">Tier (Top 4)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/40">
@@ -200,14 +200,14 @@ export default function Leaderboard() {
                             <div className="inline-flex"><RankBadge rank={entry.rank} /></div>
                           </td>
                           <td className="px-4 py-4">
-                            <Link href={`/player/${entry.player.id}`} className="flex items-center gap-3 transition-all min-w-0">
+                            <Link href={`/player/${entry.player.id}`} className="flex items-center justify-center gap-3 transition-all min-w-0">
                               <div className={`relative shrink-0 ${isTop ? 'holo-ring rounded-full' : ''}`}>
                                 <Avatar className={`h-10 w-10 border transition-all ${isTop ? 'border-primary/60 shadow-[0_0_12px_-2px_hsl(var(--primary)/0.6)]' : 'border-border group-hover:border-primary'}`}>
                                   <AvatarImage src={`https://mc-heads.net/avatar/${entry.player.minecraftUsername}/64`} />
                                   <AvatarFallback>{entry.player.minecraftUsername.substring(0, 2).toUpperCase()}</AvatarFallback>
                                 </Avatar>
                               </div>
-                              <div className="flex flex-col min-w-0">
+                              <div className="flex flex-col min-w-0 text-left">
                                 <span className="font-bold text-base group-hover:text-primary transition-colors leading-tight truncate">{entry.player.minecraftUsername}</span>
                                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground/70 font-mono">#{String(entry.rank).padStart(4, '0')}</span>
                               </div>
@@ -234,12 +234,7 @@ export default function Leaderboard() {
                             </span>
                           </td>
                           <td className="px-4 py-4 text-center">
-                            {(() => {
-                              const gmTier = ((entry.player as any).gamemodeStats ?? []).find((s: any) => s.gamemode === gamemode)?.tier;
-                              return gmTier
-                                ? <TierBadge tier={gmTier} />
-                                : <span className="text-xs text-muted-foreground/60">—</span>;
-                            })()}
+                            <TopGamemodes stats={(entry.player as any).gamemodeStats ?? []} />
                           </td>
                         </tr>
                       );})

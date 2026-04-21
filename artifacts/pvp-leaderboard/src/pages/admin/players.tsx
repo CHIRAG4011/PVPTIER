@@ -28,6 +28,7 @@ const GAMEMODE_TIER_OPTIONS = ["none", ...TIERS] as const;
 
 const gamemodeTierSchema = z.record(z.string(), z.enum(GAMEMODE_TIER_OPTIONS)).optional();
 const gamemodeScoreSchema = z.record(z.string(), z.coerce.number().int()).optional();
+const gamemodeCountSchema = z.record(z.string(), z.coerce.number().int().min(0)).optional();
 
 const updateSchema = z.object({
   elo: z.coerce.number().int(),
@@ -36,6 +37,8 @@ const updateSchema = z.object({
   tier: z.enum(TIERS),
   gamemodeTiers: gamemodeTierSchema,
   gamemodeScores: gamemodeScoreSchema,
+  gamemodeWins: gamemodeCountSchema,
+  gamemodeLosses: gamemodeCountSchema,
 });
 
 const addSchema = z.object({
@@ -102,10 +105,15 @@ export default function AdminPlayers() {
     setEditingPlayer(player);
     const tiers = emptyGamemodeTiers();
     const scores = emptyGamemodeScores();
+    const wins: Record<string, number> = {};
+    const losses: Record<string, number> = {};
+    GAMEMODES.forEach(g => { wins[g] = 0; losses[g] = 0; });
     (player.gamemodeStats ?? []).forEach((s: any) => {
       if (s?.gamemode && tiers[s.gamemode] !== undefined) {
         if (s.tier) tiers[s.gamemode] = s.tier;
         if (typeof s.elo === "number") scores[s.gamemode] = s.elo;
+        if (typeof s.wins === "number") wins[s.gamemode] = s.wins;
+        if (typeof s.losses === "number") losses[s.gamemode] = s.losses;
       }
     });
     editForm.reset({
@@ -115,6 +123,8 @@ export default function AdminPlayers() {
       tier: player.tier as any,
       gamemodeTiers: tiers,
       gamemodeScores: scores,
+      gamemodeWins: wins,
+      gamemodeLosses: losses,
     });
   };
 
@@ -485,12 +495,19 @@ export default function AdminPlayers() {
                               </div>
                               <div className="pt-2 border-t border-border/50">
                                 <div className="flex items-center justify-between mb-3">
-                                  <span className="text-sm font-medium">Gamemode Tiers & Scores</span>
-                                  <span className="text-xs text-muted-foreground">Tier and score per gamemode</span>
+                                  <span className="text-sm font-medium">Gamemode Stats</span>
+                                  <span className="text-xs text-muted-foreground">Tier, Score, W and L per gamemode</span>
                                 </div>
-                                <div className="grid grid-cols-1 gap-3">
+                                <div className="grid grid-cols-[1fr_1fr_90px_70px_70px] gap-2 px-1 mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                                  <span>Gamemode</span>
+                                  <span>Tier</span>
+                                  <span className="text-right">Score</span>
+                                  <span className="text-right">Wins</span>
+                                  <span className="text-right">Losses</span>
+                                </div>
+                                <div className="grid grid-cols-1 gap-2">
                                   {GAMEMODES.map(gm => (
-                                    <div key={gm} className="grid grid-cols-[1fr_1fr_120px] gap-2 items-end">
+                                    <div key={gm} className="grid grid-cols-[1fr_1fr_90px_70px_70px] gap-2 items-end">
                                       <div className="flex items-center gap-2 text-xs h-9 px-2 rounded-md bg-muted/30 border border-border/50">
                                         <GamemodeIcon gamemode={gm} className="w-3.5 h-3.5" />
                                         <span className="font-medium">{GAMEMODE_LABELS[gm]}</span>
@@ -521,6 +538,42 @@ export default function AdminPlayers() {
                                               <Input
                                                 type="number"
                                                 placeholder="Score"
+                                                className="h-9 text-right"
+                                                {...field}
+                                                value={field.value ?? ""}
+                                              />
+                                            </FormControl>
+                                          </FormItem>
+                                        )}
+                                      />
+                                      <FormField
+                                        control={editForm.control}
+                                        name={`gamemodeWins.${gm}` as any}
+                                        render={({ field }) => (
+                                          <FormItem className="space-y-0">
+                                            <FormControl>
+                                              <Input
+                                                type="number"
+                                                min={0}
+                                                placeholder="W"
+                                                className="h-9 text-right"
+                                                {...field}
+                                                value={field.value ?? ""}
+                                              />
+                                            </FormControl>
+                                          </FormItem>
+                                        )}
+                                      />
+                                      <FormField
+                                        control={editForm.control}
+                                        name={`gamemodeLosses.${gm}` as any}
+                                        render={({ field }) => (
+                                          <FormItem className="space-y-0">
+                                            <FormControl>
+                                              <Input
+                                                type="number"
+                                                min={0}
+                                                placeholder="L"
                                                 className="h-9 text-right"
                                                 {...field}
                                                 value={field.value ?? ""}
