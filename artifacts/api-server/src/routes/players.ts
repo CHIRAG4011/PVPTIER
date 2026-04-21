@@ -80,14 +80,20 @@ router.get("/players/:id", async (req: Request, res: Response): Promise<void> =>
     return;
   }
 
-  const player = await Player.findById(id);
+  // Accept either a Player _id OR a User _id (userId on Player) so that
+  // navigation links built from the auth user still resolve correctly.
+  let player = await Player.findById(id);
+  if (!player) {
+    player = await Player.findOne({ userId: id });
+  }
   if (!player) {
     res.status(404).json({ error: "not_found", message: "Player not found" });
     return;
   }
 
+  const playerIdStr = player._id.toString();
   const { Match } = await import("@workspace/db");
-  const recentMatches = await Match.find({ winnerId: id }).sort({ playedAt: -1 }).limit(10);
+  const recentMatches = await Match.find({ winnerId: playerIdStr }).sort({ playedAt: -1 }).limit(10);
 
   res.json({
     ...formatPlayer(player),
@@ -119,7 +125,8 @@ router.get("/players/:id/stats", async (req: Request, res: Response): Promise<vo
     return;
   }
 
-  const player = await Player.findById(id);
+  let player = await Player.findById(id);
+  if (!player) player = await Player.findOne({ userId: id });
   if (!player) {
     res.status(404).json({ error: "not_found", message: "Player not found" });
     return;
@@ -148,10 +155,14 @@ router.get("/players/:id/matches", async (req: Request, res: Response): Promise<
   const limit = parseInt(String(req.query.limit ?? 20), 10);
   const offset = (page - 1) * limit;
 
+  let player = await Player.findById(id);
+  if (!player) player = await Player.findOne({ userId: id });
+  const playerIdStr = player?._id.toString() ?? id;
+
   const { Match } = await import("@workspace/db");
   const [matches, total] = await Promise.all([
-    Match.find({ $or: [{ winnerId: id }, { loserId: id }] }).sort({ playedAt: -1 }).skip(offset).limit(limit),
-    Match.countDocuments({ $or: [{ winnerId: id }, { loserId: id }] }),
+    Match.find({ $or: [{ winnerId: playerIdStr }, { loserId: playerIdStr }] }).sort({ playedAt: -1 }).skip(offset).limit(limit),
+    Match.countDocuments({ $or: [{ winnerId: playerIdStr }, { loserId: playerIdStr }] }),
   ]);
 
   res.json({
