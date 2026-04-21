@@ -152,8 +152,8 @@ export default function Leaderboard() {
                       <th className="px-6 py-4 font-bold tracking-widest">Player</th>
                       <th className="px-6 py-4 font-bold tracking-widest text-right">Score</th>
                       <th className="px-6 py-4 font-bold tracking-widest text-center">W / L</th>
+                      <th className="px-6 py-4 font-bold tracking-widest text-center">Region</th>
                       <th className="px-6 py-4 font-bold tracking-widest text-center">Tier</th>
-                      <th className="px-6 py-4 font-bold tracking-widest text-center">Top Gamemodes</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/40">
@@ -221,10 +221,17 @@ export default function Leaderboard() {
                             </div>
                           </td>
                           <td className="px-6 py-4 text-center">
-                            <TierBadge tier={entry.tier} />
+                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md bg-muted/30 border border-border/50 text-xs font-mono font-bold tracking-wider uppercase text-foreground">
+                              {(entry.player as any).region ?? "—"}
+                            </span>
                           </td>
                           <td className="px-6 py-4 text-center">
-                            <TopGamemodes stats={(entry.player as any).gamemodeStats ?? []} />
+                            {(() => {
+                              const gmTier = ((entry.player as any).gamemodeStats ?? []).find((s: any) => s.gamemode === gamemode)?.tier;
+                              return gmTier
+                                ? <TierBadge tier={gmTier} />
+                                : <span className="text-xs text-muted-foreground/60">—</span>;
+                            })()}
                           </td>
                         </tr>
                       );})
