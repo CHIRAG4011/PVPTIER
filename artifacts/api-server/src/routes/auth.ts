@@ -22,88 +22,103 @@ function formatUser(user: any) {
 }
 
 router.post("/auth/register", async (req: Request, res: Response): Promise<void> => {
-  const parsed = RegisterUserBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "validation_error", message: parsed.error.message });
-    return;
+  try {
+    const parsed = RegisterUserBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "validation_error", message: parsed.error.message });
+      return;
+    }
+
+    const { email, password, username, minecraftUsername } = parsed.data;
+
+    const existingEmail = await User.findOne({ email: email.toLowerCase() });
+    if (existingEmail) {
+      res.status(400).json({ error: "email_taken", message: "Email already registered" });
+      return;
+    }
+
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+      res.status(400).json({ error: "username_taken", message: "Username already taken" });
+      return;
+    }
+
+    const passwordHash = await hashPassword(password);
+    const user = await User.create({
+      email: email.toLowerCase(),
+      username,
+      passwordHash,
+      minecraftUsername: minecraftUsername ?? null,
+      role: "user",
+      isBanned: false,
+    });
+
+    const token = signToken({
+      userId: user._id.toString(),
+      email: user.email,
+      username: user.username,
+      role: user.role,
+    });
+    res.status(201).json({ token, user: formatUser(user) });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Registration failed";
+    res.status(500).json({ error: "server_error", message });
   }
-
-  const { email, password, username, minecraftUsername } = parsed.data;
-
-  const existingEmail = await User.findOne({ email: email.toLowerCase() });
-  if (existingEmail) {
-    res.status(400).json({ error: "email_taken", message: "Email already registered" });
-    return;
-  }
-
-  const existingUsername = await User.findOne({ username });
-  if (existingUsername) {
-    res.status(400).json({ error: "username_taken", message: "Username already taken" });
-    return;
-  }
-
-  const passwordHash = await hashPassword(password);
-  const user = await User.create({
-    email: email.toLowerCase(),
-    username,
-    passwordHash,
-    minecraftUsername: minecraftUsername ?? null,
-    role: "user",
-    isBanned: false,
-  });
-
-  const token = signToken({
-    userId: user._id.toString(),
-    email: user.email,
-    username: user.username,
-    role: user.role,
-  });
-  res.status(201).json({ token, user: formatUser(user) });
 });
 
 router.post("/auth/login", async (req: Request, res: Response): Promise<void> => {
-  const parsed = LoginUserBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "validation_error", message: parsed.error.message });
-    return;
+  try {
+    const parsed = LoginUserBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "validation_error", message: parsed.error.message });
+      return;
+    }
+
+    const { email, password } = parsed.data;
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user || !user.passwordHash) {
+      res.status(401).json({ error: "invalid_credentials", message: "Invalid email or password" });
+      return;
+    }
+
+    const valid = await comparePasswords(password, user.passwordHash);
+    if (!valid) {
+      res.status(401).json({ error: "invalid_credentials", message: "Invalid email or password" });
+      return;
+    }
+
+    if (user.isBanned) {
+      res.status(403).json({ error: "banned", message: `Account banned: ${user.banReason}` });
+      return;
+    }
+
+    const token = signToken({
+      userId: user._id.toString(),
+      email: user.email,
+      username: user.username,
+      role: user.role,
+    });
+    res.json({ token, user: formatUser(user) });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Login failed";
+    res.status(500).json({ error: "server_error", message });
   }
-
-  const { email, password } = parsed.data;
-  const user = await User.findOne({ email: email.toLowerCase() });
-
-  if (!user || !user.passwordHash) {
-    res.status(401).json({ error: "invalid_credentials", message: "Invalid email or password" });
-    return;
-  }
-
-  const valid = await comparePasswords(password, user.passwordHash);
-  if (!valid) {
-    res.status(401).json({ error: "invalid_credentials", message: "Invalid email or password" });
-    return;
-  }
-
-  if (user.isBanned) {
-    res.status(403).json({ error: "banned", message: `Account banned: ${user.banReason}` });
-    return;
-  }
-
-  const token = signToken({
-    userId: user._id.toString(),
-    email: user.email,
-    username: user.username,
-    role: user.role,
-  });
-  res.json({ token, user: formatUser(user) });
 });
 
 router.get("/auth/me", requireAuth, async (req: Request, res: Response): Promise<void> => {
-  const authUser = (req as Request & { user?: JwtPayload }).user!;
-  const user = await User.findById(authUser.userId);
-  if (!user) {
-    res.status(404).json({ error: "not_found", message: "User not found" });
-    return;
+  try {
+    const authUser = (req as Request & { user?: JwtPayload }).user!;
+    const user = await User.findById(authUser.userId);
+    if (!user) {
+      res.status(404).json({ error: "not_found", message: "User not found" });
+      return;
+    }
+    res.json(formatUser(user));
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to fetch user";
+    res.status(500).json({ error: "server_error", message });
   }
-  res.json(formatUser(user));
 });
 
 router.post("/auth/logout", (_req: Request, res: Response): Promise<void> => {

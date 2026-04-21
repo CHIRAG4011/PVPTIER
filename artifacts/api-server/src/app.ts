@@ -3,7 +3,7 @@ import cors from "cors";
 import { pinoHttp } from "pino-http";
 import router from "./routes/index.js";
 import { logger } from "./lib/logger.js";
-import { User, SiteSetting } from "@workspace/db";
+import { User, SiteSetting, connectDB } from "@workspace/db";
 import { hashPassword } from "./lib/auth.js";
 
 const app = express();
@@ -41,6 +41,15 @@ app.options(/.*/, cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(async (_req: Request, _res: Response, next: NextFunction) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 app.use("/api", router);
 
