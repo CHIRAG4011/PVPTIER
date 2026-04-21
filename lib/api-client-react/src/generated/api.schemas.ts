@@ -231,6 +231,12 @@ export const TicketCategory = {
   bug: "bug",
   report: "report",
   appeal: "appeal",
+  alliance_promotion: "alliance_promotion",
+  account_issue: "account_issue",
+  payment: "payment",
+  suggestion: "suggestion",
+  harassment: "harassment",
+  technical_support: "technical_support",
   other: "other",
 } as const;
 
@@ -292,6 +298,12 @@ export const CreateTicketBodyCategory = {
   bug: "bug",
   report: "report",
   appeal: "appeal",
+  alliance_promotion: "alliance_promotion",
+  account_issue: "account_issue",
+  payment: "payment",
+  suggestion: "suggestion",
+  harassment: "harassment",
+  technical_support: "technical_support",
   other: "other",
 } as const;
 

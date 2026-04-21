@@ -387,7 +387,7 @@ export const CreateSubmissionBody = zod.object({
   opponentUsername: zod.string(),
   gamemode: zod.string(),
   result: zod.enum(["win", "loss"]),
-  evidence: zod.string().url("Evidence must be a valid URL"),
+  evidence: zod.string().optional(),
 });
 
 /**
@@ -455,7 +455,18 @@ export const ListTicketsResponse = zod.object({
       id: zod.number(),
       userId: zod.number(),
       username: zod.string(),
-      category: zod.enum(["bug", "report", "appeal", "other"]),
+      category: zod.enum([
+        "bug",
+        "report",
+        "appeal",
+        "alliance_promotion",
+        "account_issue",
+        "payment",
+        "suggestion",
+        "harassment",
+        "technical_support",
+        "other",
+      ]),
       subject: zod.string(),
       status: zod.enum(["open", "pending", "closed"]),
       priority: zod.enum(["low", "medium", "high"]),
@@ -473,7 +484,18 @@ export const ListTicketsResponse = zod.object({
  * @summary Create a support ticket
  */
 export const CreateTicketBody = zod.object({
-  category: zod.enum(["bug", "report", "appeal", "other"]),
+  category: zod.enum([
+    "bug",
+    "report",
+    "appeal",
+    "alliance_promotion",
+    "account_issue",
+    "payment",
+    "suggestion",
+    "harassment",
+    "technical_support",
+    "other",
+  ]),
   subject: zod.string(),
   message: zod.string(),
   priority: zod.enum(["low", "medium", "high"]).optional(),
@@ -491,7 +513,18 @@ export const GetTicketResponse = zod
     id: zod.number(),
     userId: zod.number(),
     username: zod.string(),
-    category: zod.enum(["bug", "report", "appeal", "other"]),
+    category: zod.enum([
+      "bug",
+      "report",
+      "appeal",
+      "alliance_promotion",
+      "account_issue",
+      "payment",
+      "suggestion",
+      "harassment",
+      "technical_support",
+      "other",
+    ]),
     subject: zod.string(),
     status: zod.enum(["open", "pending", "closed"]),
     priority: zod.enum(["low", "medium", "high"]),

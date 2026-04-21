@@ -1203,7 +1203,7 @@ components:
           type: string
         category:
           type: string
-          enum: [bug, report, appeal, other]
+          enum: [bug, report, appeal, alliance_promotion, account_issue, payment, suggestion, harassment, technical_support, other]
         subject:
           type: string
         status:
@@ -1292,7 +1292,7 @@ components:
       properties:
         category:
           type: string
-          enum: [bug, report, appeal, other]
+          enum: [bug, report, appeal, alliance_promotion, account_issue, payment, suggestion, harassment, technical_support, other]
         subject:
           type: string
         message:

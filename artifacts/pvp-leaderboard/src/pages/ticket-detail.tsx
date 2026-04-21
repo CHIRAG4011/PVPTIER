@@ -115,7 +115,7 @@ export default function TicketDetail() {
                 <span>•</span>
                 <span>Created by {ticket.username}</span>
                 <span>•</span>
-                <span className="capitalize">{ticket.category}</span>
+                <span>{ticket.category.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</span>
                 <span>•</span>
                 <span>{new Date(ticket.createdAt).toLocaleString()}</span>
               </div>
@@ -130,7 +130,7 @@ export default function TicketDetail() {
                 {ticket.status}
               </span>
               
-              {!isClosed && (
+              {!isClosed && isAdmin && (
                 <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleClose} disabled={closeMutation.isPending}>
                   <Lock className="w-4 h-4 mr-2" /> Close
                 </Button>

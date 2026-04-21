@@ -7,22 +7,46 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Ticket as TicketIcon, Plus, MessageSquare, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Ticket as TicketIcon, Plus, MessageSquare, Clock, CheckCircle2, AlertCircle, Send } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 const ticketSchema = z.object({
-  subject: z.string().min(5, { message: "Subject must be at least 5 characters" }),
-  category: z.enum(["bug", "report", "appeal", "other"], { required_error: "Category is required" }),
+  subject: z.string().min(5, { message: "Subject must be at least 5 characters" }).max(120, { message: "Subject must be under 120 characters" }),
+  category: z.enum([
+    "bug",
+    "report",
+    "appeal",
+    "alliance_promotion",
+    "account_issue",
+    "payment",
+    "suggestion",
+    "harassment",
+    "technical_support",
+    "other",
+  ], { required_error: "Category is required" }),
   priority: z.enum(["low", "medium", "high"]).optional(),
-  message: z.string().min(10, { message: "Message must be at least 10 characters" }),
+  message: z.string().min(20, { message: "Please describe your issue in at least 20 characters" }).max(4000, { message: "Message is too long (max 4000)" }),
 });
+
+const CATEGORY_OPTIONS: { value: z.infer<typeof ticketSchema>["category"]; label: string; description: string }[] = [
+  { value: "report", label: "Player Report", description: "Report a player for cheating, griefing, or rule-breaking" },
+  { value: "appeal", label: "Ban / Mute Appeal", description: "Appeal a moderation action taken against your account" },
+  { value: "alliance_promotion", label: "Alliance Promotion", description: "Request a promotion, role change, or rank within your alliance" },
+  { value: "harassment", label: "Harassment Report", description: "Report harassment, hate speech, or toxic behavior" },
+  { value: "account_issue", label: "Account Issue", description: "Lost access, username changes, linked accounts, or password help" },
+  { value: "payment", label: "Payment / Billing", description: "Issues with purchases, refunds, or unreceived items" },
+  { value: "technical_support", label: "Technical Support", description: "Connection problems, lag, crashes, or client errors" },
+  { value: "bug", label: "Bug Report", description: "Report a bug or unexpected behavior in the server or website" },
+  { value: "suggestion", label: "Suggestion / Feedback", description: "Share an idea or feedback to help us improve" },
+  { value: "other", label: "Other", description: "Anything else that doesn't fit a category above" },
+];
 
 export default function Tickets() {
   const { isAuthenticated } = useAuth();
@@ -91,67 +115,84 @@ export default function Tickets() {
                 <Plus className="w-4 h-4" /> New Ticket
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] border-border bg-card">
-              <DialogHeader>
-                <DialogTitle>Create Support Ticket</DialogTitle>
+            <DialogContent className="sm:max-w-[760px] max-h-[92vh] overflow-y-auto border-border bg-card p-0">
+              <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
+                <DialogTitle className="text-2xl font-display flex items-center gap-2">
+                  <TicketIcon className="w-6 h-6 text-primary" />
+                  Open a Support Ticket
+                </DialogTitle>
+                <DialogDescription>
+                  Choose the category that best describes your request. The more detail you provide, the faster our staff can help you.
+                </DialogDescription>
               </DialogHeader>
+
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="px-6 py-6 space-y-6">
                   <FormField
                     control={form.control}
-                    name="subject"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Subject</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Brief summary of your issue" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="category"
-                      render={({ field }) => (
+                    name="category"
+                    render={({ field }) => {
+                      const selected = CATEGORY_OPTIONS.find(o => o.value === field.value);
+                      return (
                         <FormItem>
-                          <FormLabel>Category</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormLabel className="text-base">Category <span className="text-destructive">*</span></FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select category" />
+                              <SelectTrigger className="h-11">
+                                <SelectValue placeholder="Select the category that best fits your issue" />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
-                              <SelectItem value="report">Player Report</SelectItem>
-                              <SelectItem value="appeal">Ban Appeal</SelectItem>
-                              <SelectItem value="bug">Bug Report</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
+                            <SelectContent className="max-h-[320px]">
+                              {CATEGORY_OPTIONS.map(opt => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                  <div className="flex flex-col py-1">
+                                    <span className="font-medium">{opt.label}</span>
+                                    <span className="text-xs text-muted-foreground">{opt.description}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
+                          {selected && (
+                            <p className="text-xs text-muted-foreground mt-1.5">{selected.description}</p>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="subject"
+                      render={({ field }) => (
+                        <FormItem className="md:col-span-2">
+                          <FormLabel className="text-base">Subject <span className="text-destructive">*</span></FormLabel>
+                          <FormControl>
+                            <Input className="h-11" placeholder="Brief summary of your request" {...field} />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="priority"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Priority</FormLabel>
+                          <FormLabel className="text-base">Priority</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select priority" />
+                              <SelectTrigger className="h-11">
+                                <SelectValue placeholder="Priority" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="low">Low</SelectItem>
-                              <SelectItem value="medium">Medium</SelectItem>
-                              <SelectItem value="high">High</SelectItem>
+                              <SelectItem value="low">Low — minor / not urgent</SelectItem>
+                              <SelectItem value="medium">Medium — affects gameplay</SelectItem>
+                              <SelectItem value="high">High — urgent or blocking</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -165,24 +206,36 @@ export default function Tickets() {
                     name="message"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Message</FormLabel>
+                        <FormLabel className="text-base">Description <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
-                          <Textarea 
-                            placeholder="Provide as much detail as possible..." 
-                            className="min-h-[150px] resize-none" 
-                            {...field} 
+                          <Textarea
+                            placeholder={`Please include:\n• What happened (and what you expected)\n• Date, time, and server / world if relevant\n• Player names, screenshots, or video links\n• Any steps to reproduce the issue`}
+                            className="min-h-[220px] resize-y leading-relaxed"
+                            {...field}
                           />
                         </FormControl>
-                        <FormMessage />
+                        <div className="flex items-center justify-between mt-1">
+                          <FormMessage />
+                          <span className="text-xs text-muted-foreground ml-auto">
+                            {field.value?.length ?? 0} / 4000
+                          </span>
+                        </div>
                       </FormItem>
                     )}
                   />
 
-                  <div className="flex justify-end pt-4">
-                    <Button type="submit" disabled={createMutation.isPending}>
-                      {createMutation.isPending ? "Creating..." : "Submit Ticket"}
-                    </Button>
+                  <div className="rounded-lg border border-border/60 bg-muted/20 p-3 text-xs text-muted-foreground">
+                    By submitting, you agree to follow the server rules. False reports, spam tickets, or abuse of the support system may result in moderation action.
                   </div>
+
+                  <DialogFooter className="gap-2 pt-2">
+                    <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={createMutation.isPending} className="gap-2 min-w-[160px]">
+                      {createMutation.isPending ? "Submitting..." : (<><Send className="w-4 h-4" /> Submit Ticket</>)}
+                    </Button>
+                  </DialogFooter>
                 </form>
               </Form>
             </DialogContent>
@@ -218,8 +271,8 @@ export default function Tickets() {
                         </h4>
                         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                           <span className="font-mono">#{ticket.id}</span>
-                          <span className="capitalize px-2 py-0.5 rounded bg-muted/50 border border-border">
-                            {ticket.category}
+                          <span className="px-2 py-0.5 rounded bg-muted/50 border border-border">
+                            {CATEGORY_OPTIONS.find(o => o.value === ticket.category)?.label ?? ticket.category}
                           </span>
                           <span className="capitalize">
                             Priority: <span className={cn(

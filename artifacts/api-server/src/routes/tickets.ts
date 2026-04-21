@@ -143,15 +143,15 @@ router.post("/tickets/:id/close", requireAuth, async (req: Request, res: Respons
     return;
   }
 
-  const ticket = await Ticket.findById(id);
-  if (!ticket) {
-    res.status(404).json({ error: "not_found", message: "Ticket not found" });
+  const isAdmin = ["admin", "superadmin", "moderator"].includes(user.role);
+  if (!isAdmin) {
+    res.status(403).json({ error: "forbidden", message: "Only staff can close tickets" });
     return;
   }
 
-  const isAdmin = ["admin", "superadmin", "moderator"].includes(user.role);
-  if (!isAdmin && ticket.userId !== user.userId) {
-    res.status(403).json({ error: "forbidden", message: "Access denied" });
+  const ticket = await Ticket.findById(id);
+  if (!ticket) {
+    res.status(404).json({ error: "not_found", message: "Ticket not found" });
     return;
   }
 

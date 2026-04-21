@@ -12,7 +12,7 @@ export interface ITicketReply extends Document {
 export interface ITicket extends Document {
   userId: string;
   username: string;
-  category: "bug" | "report" | "appeal" | "other";
+  category: "bug" | "report" | "appeal" | "alliance_promotion" | "account_issue" | "payment" | "suggestion" | "harassment" | "technical_support" | "other";
   subject: string;
   status: "open" | "pending" | "closed";
   priority: "low" | "medium" | "high";
@@ -46,7 +46,7 @@ const TicketSchema = new Schema<ITicket>(
   {
     userId: { type: String, required: true },
     username: { type: String, required: true },
-    category: { type: String, enum: ["bug", "report", "appeal", "other"], required: true },
+    category: { type: String, enum: ["bug", "report", "appeal", "alliance_promotion", "account_issue", "payment", "suggestion", "harassment", "technical_support", "other"], required: true },
     subject: { type: String, required: true },
     status: { type: String, enum: ["open", "pending", "closed"], default: "open" },
     priority: { type: String, enum: ["low", "medium", "high"], default: "medium" },
