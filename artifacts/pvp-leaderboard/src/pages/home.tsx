@@ -59,25 +59,29 @@ export default function Home() {
       <section className="relative py-20 lg:py-32 overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?q=80&w=2070')] bg-cover bg-center opacity-10 mix-blend-overlay"></div>
         <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/80 to-background"></div>
-        
+        {/* Animated glow orbs */}
+        <div className="pointer-events-none absolute top-10 left-1/3 w-[400px] h-[400px] bg-primary/15 blur-[120px] rounded-full animate-float" />
+        <div className="pointer-events-none absolute bottom-10 right-1/3 w-[300px] h-[300px] bg-accent/15 blur-[120px] rounded-full animate-float" style={{ animationDelay: '1.5s' }} />
+        <div className="pointer-events-none absolute inset-0 grid-bg opacity-30" />
+
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
+          <div className="max-w-4xl mx-auto text-center animate-row-rise">
             {siteSettings.homepage_season_badge && (
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary mb-6">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-primary mb-6 animate-pulse-glow">
                 <Trophy className="w-4 h-4" />
-                <span className="text-sm font-medium">{siteSettings.homepage_season_badge}</span>
+                <span className="text-sm font-medium font-mono uppercase tracking-widest">{siteSettings.homepage_season_badge}</span>
               </div>
             )}
             
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 font-display neon-text-primary">
+            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 font-display">
               {siteSettings.homepage_hero_title?.split("\n").map((line, i, arr) => (
                 <span key={i}>
                   {i === arr.length - 1
-                    ? <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">{line}</span>
-                    : <>{line} <br /></>
+                    ? <span className="shimmer-text">{line}</span>
+                    : <span className="neon-text-primary">{line} <br /></span>
                   }
                 </span>
-              )) || <>DOMINATE THE <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">COMPETITION</span></>}
+              )) || <><span className="neon-text-primary">DOMINATE THE</span> <br /><span className="shimmer-text">COMPETITION</span></>}
             </h1>
             
             <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
@@ -85,10 +89,12 @@ export default function Home() {
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="lg" className="w-full sm:w-auto text-lg h-14 px-8 font-bold" asChild>
-                <Link href="/leaderboard">View Leaderboards</Link>
+              <Button size="lg" className="w-full sm:w-auto text-lg h-14 px-8 font-bold relative overflow-hidden group shadow-[0_0_24px_-4px_hsl(var(--primary)/0.6)] hover:shadow-[0_0_32px_-2px_hsl(var(--primary)/0.8)] transition-all" asChild>
+                <Link href="/leaderboard">
+                  <span className="relative z-10 flex items-center gap-2">View Leaderboards <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" /></span>
+                </Link>
               </Button>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg h-14 px-8 border-primary/30 hover:border-primary/60 hover:bg-primary/10 font-bold" asChild>
+              <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg h-14 px-8 border-primary/30 hover:border-primary/60 hover:bg-primary/10 font-bold transition-all" asChild>
                 <Link href="/register">Join the Arena</Link>
               </Button>
             </div>
@@ -99,37 +105,40 @@ export default function Home() {
       <div className="container mx-auto px-4 py-12">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-          <div className="glass-card p-6 rounded-xl flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
-              <Users className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Total Players</p>
-              <h3 className="text-3xl font-bold font-display">{statsLoading ? <Skeleton className="h-8 w-24 mt-1" /> : stats?.totalPlayers.toLocaleString()}</h3>
-            </div>
-          </div>
-          
-          <div className="glass-card p-6 rounded-xl flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-accent/20 flex items-center justify-center text-accent">
-              <Swords className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Matches Played</p>
-              <h3 className="text-3xl font-bold font-display">{statsLoading ? <Skeleton className="h-8 w-24 mt-1" /> : stats?.totalMatches.toLocaleString()}</h3>
-            </div>
-          </div>
-          
-          <div className="glass-card p-6 rounded-xl flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-yellow-500/20 flex items-center justify-center text-yellow-500">
-              <Trophy className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Top Player</p>
-              <h3 className="text-xl font-bold font-display truncate max-w-[150px]">
-                {statsLoading ? <Skeleton className="h-8 w-32 mt-1" /> : stats?.topPlayer}
-              </h3>
-            </div>
-          </div>
+          {[
+            { icon: Users, label: "Total Players", value: stats?.totalPlayers.toLocaleString(), color: "primary" },
+            { icon: Swords, label: "Matches Played", value: stats?.totalMatches.toLocaleString(), color: "accent" },
+            { icon: Trophy, label: "Top Player", value: stats?.topPlayer, color: "yellow", isText: true },
+          ].map((card, idx) => {
+            const colorMap: Record<string, string> = {
+              primary: "from-primary/30 to-primary/5 text-primary border-primary/40",
+              accent: "from-accent/30 to-accent/5 text-accent border-accent/40",
+              yellow: "from-yellow-500/30 to-yellow-500/5 text-yellow-500 border-yellow-500/40",
+            };
+            return (
+              <div
+                key={card.label}
+                className="relative glass-card p-6 rounded-xl flex items-center gap-4 group hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 scanline-overlay animate-row-rise"
+                style={{ animationDelay: `${idx * 80}ms` }}
+              >
+                <div className="absolute top-0 left-0 w-8 h-8 border-t border-l border-primary/40 rounded-tl-xl" />
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b border-r border-primary/40 rounded-br-xl" />
+                <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${colorMap[card.color]} border flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                  <card.icon className="w-6 h-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] mb-1">{card.label}</p>
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-24" />
+                  ) : (
+                    <h3 className={`font-bold font-display truncate ${card.isText ? 'text-xl' : 'text-3xl'} ${card.color === 'primary' ? 'text-primary neon-text-primary' : card.color === 'yellow' ? 'text-yellow-500' : 'text-accent neon-text-accent'}`}>
+                      {card.value}
+                    </h3>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -31,7 +31,8 @@ export function Navbar() {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
+    <nav className="sticky top-0 z-50 w-full border-b border-primary/20 bg-background/70 backdrop-blur-xl">
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2 group">
@@ -39,30 +40,38 @@ export function Navbar() {
               <img src={settings.site_logo} alt={siteName} className="h-8 w-auto max-w-[160px] object-contain" />
             ) : (
               <>
-                <div className="w-8 h-8 rounded bg-primary/20 flex items-center justify-center border border-primary/50 group-hover:bg-primary/30 transition-colors">
+                <div className="relative w-9 h-9 rounded-lg bg-gradient-to-br from-primary/30 to-accent/20 flex items-center justify-center border border-primary/50 group-hover:border-primary group-hover:shadow-[0_0_18px_-2px_hsl(var(--primary)/0.7)] transition-all">
                   <Swords className="w-5 h-5 text-primary" />
                 </div>
                 <span className="font-display font-bold text-xl tracking-tight hidden sm:block">
-                  {siteName.slice(0, -5).toUpperCase() || "PVP"}<span className="text-primary">{siteName.slice(-5).toUpperCase() || "TIERS"}</span>
+                  {siteName.slice(0, -5).toUpperCase() || "PVP"}<span className="shimmer-text">{siteName.slice(-5).toUpperCase() || "TIERS"}</span>
                 </span>
               </>
             )}
           </Link>
           
           <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
+            {navLinks.map((link) => {
+              const active = location === link.href;
+              return (
               <Link 
                 key={link.href} 
                 href={link.href}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  location === link.href 
-                    ? "bg-primary/10 text-primary" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                className={`relative px-4 py-2 rounded-md text-sm font-medium uppercase tracking-wider transition-all ${
+                  active
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {link.label}
+                {active && (
+                  <>
+                    <span className="absolute inset-0 rounded-md bg-primary/10 border border-primary/30 shadow-[0_0_12px_-2px_hsl(var(--primary)/0.5)] -z-10" />
+                    <span className="absolute -bottom-[17px] left-1/2 -translate-x-1/2 w-8 h-px bg-primary shadow-[0_0_8px_hsl(var(--primary))]" />
+                  </>
+                )}
               </Link>
-            ))}
+            );})}
           </div>
         </div>
 
