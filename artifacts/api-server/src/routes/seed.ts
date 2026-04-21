@@ -1,8 +1,48 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { User, Player, Match } from "@workspace/db";
-import { hashPassword } from "../lib/auth";
+import { hashPassword, signToken } from "../lib/auth";
 
 const router: IRouter = Router();
+
+router.post("/setup-admin", async (req: Request, res: Response): Promise<void> => {
+  const { email, setupKey } = req.body;
+
+  const expectedKey = process.env.SETUP_SECRET || "sovereign-setup-2024";
+  if (setupKey !== expectedKey) {
+    res.status(403).json({ error: "forbidden", message: "Invalid setup key" });
+    return;
+  }
+
+  if (!email) {
+    res.status(400).json({ error: "validation_error", message: "Email is required" });
+    return;
+  }
+
+  const user = await User.findOneAndUpdate(
+    { email: email.toLowerCase() },
+    { role: "superadmin" },
+    { new: true }
+  );
+
+  if (!user) {
+    res.status(404).json({ error: "not_found", message: `No account found with email: ${email}. Register on the site first, then call this endpoint.` });
+    return;
+  }
+
+  const token = signToken({
+    userId: user._id.toString(),
+    email: user.email,
+    username: user.username,
+    role: "superadmin",
+  });
+
+  res.json({
+    success: true,
+    message: `${user.username} (${user.email}) has been promoted to superadmin. Use the token below to log in instantly, or just log out and back in on the website.`,
+    token,
+    user: { id: user._id.toString(), username: user.username, email: user.email, role: "superadmin" },
+  });
+});
 
 const GAMEMODES = ["sword", "axe", "uhc", "vanilla", "smp", "diapot", "nethpot", "elytra"] as const;
 const TIERS = ["LT1", "LT2", "LT3", "LT4", "LT5", "HT1", "HT2", "HT3", "HT4", "HT5"] as const;
