@@ -152,102 +152,106 @@ export default function Leaderboard() {
               <div className="pointer-events-none absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-primary/40 rounded-br-xl" />
 
               <div className="overflow-x-auto">
-                <table className="w-full text-sm text-center">
-                  <colgroup>
-                    <col className="w-[72px]" />
-                    <col className="w-auto" />
-                    <col className="w-[100px]" />
-                    <col className="w-[130px]" />
-                    <col className="w-[80px]" />
-                    <col className="w-[230px]" />
-                  </colgroup>
-                  <thead className="text-xs uppercase bg-gradient-to-r from-muted/40 via-primary/5 to-muted/40 text-muted-foreground border-b border-primary/20">
-                    <tr>
-                      <th className="px-4 py-4 font-bold tracking-widest text-center">Rank</th>
-                      <th className="px-4 py-4 font-bold tracking-widest text-center">Player</th>
-                      <th className="px-4 py-4 font-bold tracking-widest text-center">Score</th>
-                      <th className="px-4 py-4 font-bold tracking-widest text-center">W / L</th>
-                      <th className="px-4 py-4 font-bold tracking-widest text-center">Region</th>
-                      <th className="px-4 py-4 font-bold tracking-widest text-center">Tier (Top 4)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/40">
-                    {leaderboardLoading ? (
-                      Array.from({ length: 10 }).map((_, i) => (
-                        <tr key={i}>
-                          <td className="px-4 py-4"><Skeleton className="h-10 w-10 rounded-xl mx-auto" /></td>
-                          <td className="px-4 py-4"><Skeleton className="h-8 w-32" /></td>
-                          <td className="px-4 py-4"><Skeleton className="h-6 w-16 mx-auto" /></td>
-                          <td className="px-4 py-4"><Skeleton className="h-6 w-20 mx-auto" /></td>
-                          <td className="px-4 py-4"><Skeleton className="h-6 w-12 mx-auto" /></td>
-                          <td className="px-4 py-4"><Skeleton className="h-6 w-16 mx-auto" /></td>
-                        </tr>
-                      ))
-                    ) : leaderboard?.entries.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
-                          No players found for these filters.
-                        </td>
-                      </tr>
-                    ) : (
-                      leaderboard?.entries.map((entry, i) => {
-                        const isTop = entry.rank <= 3;
-                        const rowAccent =
-                          entry.rank === 1 ? 'before:bg-yellow-500' :
-                          entry.rank === 2 ? 'before:bg-gray-300' :
-                          entry.rank === 3 ? 'before:bg-amber-600' :
-                          'before:bg-transparent';
-                        return (
-                        <tr
+                <div className="min-w-[860px]">
+                  {/* Header */}
+                  <div
+                    className="grid items-center gap-2 px-4 py-4 text-xs uppercase font-bold tracking-widest text-muted-foreground bg-gradient-to-r from-muted/40 via-primary/5 to-muted/40 border-b border-primary/20"
+                    style={{ gridTemplateColumns: "72px minmax(220px, 1fr) 110px 140px 90px 240px" }}
+                  >
+                    <div className="text-center">Rank</div>
+                    <div className="text-left pl-1">Player</div>
+                    <div className="text-center">Score</div>
+                    <div className="text-center">W / L</div>
+                    <div className="text-center">Region</div>
+                    <div className="text-center">Tier (Top 4)</div>
+                  </div>
+
+                  {/* Body */}
+                  {leaderboardLoading ? (
+                    Array.from({ length: 10 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="grid items-center gap-2 px-4 py-4 border-b border-border/40"
+                        style={{ gridTemplateColumns: "72px minmax(220px, 1fr) 110px 140px 90px 240px" }}
+                      >
+                        <Skeleton className="h-10 w-10 rounded-xl mx-auto" />
+                        <Skeleton className="h-8 w-40" />
+                        <Skeleton className="h-6 w-16 mx-auto" />
+                        <Skeleton className="h-6 w-20 mx-auto" />
+                        <Skeleton className="h-6 w-12 mx-auto" />
+                        <Skeleton className="h-6 w-32 mx-auto" />
+                      </div>
+                    ))
+                  ) : leaderboard?.entries.length === 0 ? (
+                    <div className="px-6 py-12 text-center text-muted-foreground">
+                      No players found for these filters.
+                    </div>
+                  ) : (
+                    leaderboard?.entries.map((entry, i) => {
+                      const isTop = entry.rank <= 3;
+                      const rowAccent =
+                        entry.rank === 1 ? "before:bg-yellow-500" :
+                        entry.rank === 2 ? "before:bg-gray-300" :
+                        entry.rank === 3 ? "before:bg-amber-600" :
+                        "before:bg-transparent";
+                      return (
+                        <div
                           key={entry.player.id}
-                          className={`relative hover:bg-primary/5 transition-all duration-300 group scanline-overlay animate-row-rise before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-r ${rowAccent} ${isTop ? 'bg-gradient-to-r from-primary/[0.04] to-transparent' : ''}`}
-                          style={{ animationDelay: `${i * 30}ms` }}
+                          className={`relative grid items-center gap-2 px-4 py-4 border-b border-border/40 hover:bg-primary/5 transition-all duration-300 group scanline-overlay animate-row-rise before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-r ${rowAccent} ${isTop ? "bg-gradient-to-r from-primary/[0.04] to-transparent" : ""}`}
+                          style={{ gridTemplateColumns: "72px minmax(220px, 1fr) 110px 140px 90px 240px", animationDelay: `${i * 30}ms` }}
                         >
-                          <td className="px-4 py-4 text-center">
-                            <div className="inline-flex"><RankBadge rank={entry.rank} /></div>
-                          </td>
-                          <td className="px-4 py-4">
-                            <Link href={`/player/${entry.player.id}`} className="flex items-center justify-center gap-3 transition-all min-w-0">
-                              <div className={`relative shrink-0 ${isTop ? 'holo-ring rounded-full' : ''}`}>
-                                <Avatar className={`h-10 w-10 border transition-all ${isTop ? 'border-primary/60 shadow-[0_0_12px_-2px_hsl(var(--primary)/0.6)]' : 'border-border group-hover:border-primary'}`}>
-                                  <AvatarImage src={`https://mc-heads.net/avatar/${entry.player.minecraftUsername}/64`} />
-                                  <AvatarFallback>{entry.player.minecraftUsername.substring(0, 2).toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                              </div>
-                              <div className="flex flex-col text-left">
-                                <span className="font-bold text-base group-hover:text-primary transition-colors leading-tight whitespace-nowrap">{entry.player.minecraftUsername}</span>
-                                <span className="text-[10px] uppercase tracking-widest text-muted-foreground/70 font-mono">#{String(entry.rank).padStart(4, '0')}</span>
-                              </div>
-                            </Link>
-                          </td>
-                          <td className="px-4 py-4 text-center">
-                            <div className="inline-flex flex-col items-center">
-                              <span className={`font-mono font-bold text-xl leading-none ${isTop ? 'shimmer-text' : 'text-primary neon-text-primary'}`}>
-                                {entry.elo.toLocaleString()}
-                              </span>
-                              <span className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-mono mt-1">SCORE</span>
+                          {/* Rank */}
+                          <div className="flex justify-center">
+                            <RankBadge rank={entry.rank} />
+                          </div>
+
+                          {/* Player */}
+                          <Link href={`/player/${entry.player.id}`} className="flex items-center gap-3 min-w-0">
+                            <div className={`relative shrink-0 ${isTop ? "holo-ring rounded-full" : ""}`}>
+                              <Avatar className={`h-10 w-10 border transition-all ${isTop ? "border-primary/60 shadow-[0_0_12px_-2px_hsl(var(--primary)/0.6)]" : "border-border group-hover:border-primary"}`}>
+                                <AvatarImage src={`https://mc-heads.net/avatar/${entry.player.minecraftUsername}/64`} />
+                                <AvatarFallback>{entry.player.minecraftUsername.substring(0, 2).toUpperCase()}</AvatarFallback>
+                              </Avatar>
                             </div>
-                          </td>
-                          <td className="px-4 py-4 text-center">
+                            <div className="flex flex-col min-w-0">
+                              <span className="font-bold text-base group-hover:text-primary transition-colors leading-tight truncate">{entry.player.minecraftUsername}</span>
+                              <span className="text-[10px] uppercase tracking-widest text-muted-foreground/70 font-mono">#{String(entry.rank).padStart(4, "0")}</span>
+                            </div>
+                          </Link>
+
+                          {/* Score */}
+                          <div className="flex flex-col items-center">
+                            <span className={`font-mono font-bold text-xl leading-none ${isTop ? "shimmer-text" : "text-primary neon-text-primary"}`}>
+                              {entry.elo.toLocaleString()}
+                            </span>
+                            <span className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-mono mt-1">SCORE</span>
+                          </div>
+
+                          {/* W / L */}
+                          <div className="flex justify-center">
                             <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-muted/20 border border-border/50">
                               <span className="text-green-400 font-bold font-mono text-sm">{entry.wins}<span className="text-[10px] ml-0.5 opacity-70">W</span></span>
                               <span className="text-muted-foreground/40">/</span>
                               <span className="text-red-400 font-bold font-mono text-sm">{entry.losses}<span className="text-[10px] ml-0.5 opacity-70">L</span></span>
                             </div>
-                          </td>
-                          <td className="px-4 py-4 text-center">
+                          </div>
+
+                          {/* Region */}
+                          <div className="flex justify-center">
                             <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md bg-muted/30 border border-border/50 text-xs font-mono font-bold tracking-wider uppercase text-foreground">
                               {(entry.player as any).region ?? "—"}
                             </span>
-                          </td>
-                          <td className="px-4 py-4 text-center">
+                          </div>
+
+                          {/* Tier (Top 4) */}
+                          <div className="flex justify-center">
                             <TopGamemodes stats={(entry.player as any).gamemodeStats ?? []} fallbackTier={(entry.player as any).tier} />
-                          </td>
-                        </tr>
-                      );})
-                    )}
-                  </tbody>
-                </table>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
               
               {leaderboard && leaderboard.totalPages > 1 && (
