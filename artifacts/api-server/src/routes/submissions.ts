@@ -23,16 +23,56 @@ router.post("/submissions", requireAuth, async (req: Request, res: Response): Pr
   }
 
   const { opponentUsername, gamemode, evidence } = parsed.data;
+  const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const exactRegex = { $regex: `^${escapeRegex(opponentUsername.trim())}$`, $options: "i" };
 
-  const opponent = await Player.findOne({ minecraftUsername: { $regex: `^${opponentUsername}$`, $options: "i" } });
+  // Prevent submitting a match against yourself
+  const submitterUserDoc = await User.findById(user.userId);
+  const submitterIGN = submitterUserDoc?.minecraftUsername || user.username;
+  if (submitterIGN && opponentUsername.trim().toLowerCase() === submitterIGN.toLowerCase()) {
+    res.status(400).json({ error: "self_match", message: "You can't submit a match against yourself." });
+    return;
+  }
+
+  // Try to find opponent as a Player first
+  let opponent = await Player.findOne({ minecraftUsername: exactRegex });
+
+  // Fall back: opponent may exist as a registered User without a Player row yet.
   if (!opponent) {
-    res.status(404).json({ error: "player_not_found", message: `Player "${opponentUsername}" not found in the system. Make sure you enter their exact Minecraft IGN.` });
+    const opponentUser = await User.findOne({
+      $or: [
+        { minecraftUsername: exactRegex },
+        { username: exactRegex },
+      ],
+    });
+    if (opponentUser) {
+      const playerName = opponentUser.minecraftUsername || opponentUser.username;
+      opponent = await Player.create({
+        userId: opponentUser._id.toString(),
+        minecraftUsername: playerName,
+        tier: "LT1",
+        elo: 0,
+        wins: 0,
+        losses: 0,
+        winStreak: 0,
+        region: "NA",
+        badges: [],
+        gamemodeStats: [],
+      });
+    }
+  }
+
+  if (!opponent) {
+    res.status(404).json({
+      error: "player_not_found",
+      message: `Player "${opponentUsername}" isn't registered yet. Ask them to make an account, then pick them from the dropdown.`,
+    });
     return;
   }
 
   const submission = await Submission.create({
     submitterId: user.userId,
-    submitterUsername: user.username,
+    submitterUsername: submitterIGN,
     opponentUsername: opponent.minecraftUsername,
     gamemode,
     result: null,
