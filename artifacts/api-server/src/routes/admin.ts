@@ -150,7 +150,7 @@ const CreatePlayerBody = z.object({
   minecraftUuid: z.string().optional(),
   discordUsername: z.string().optional(),
   tier: TierEnum.default("LT1"),
-  elo: z.number().int().default(1000),
+  elo: z.number().int().default(0),
   wins: z.number().int().min(0).default(0),
   losses: z.number().int().min(0).default(0),
   region: z.string().default("NA"),
@@ -165,7 +165,7 @@ function buildGamemodeStats(gamemodeTiers?: Record<string, string | null | undef
   for (const gm of SUPPORTED_GAMEMODES) {
     const t = gamemodeTiers[gm];
     if (t && t !== "none") {
-      stats.push({ gamemode: gm, wins: 0, losses: 0, elo: 1000, tier: t });
+      stats.push({ gamemode: gm, wins: 0, losses: 0, elo: 0, tier: t });
     }
   }
   return stats;
@@ -203,7 +203,7 @@ router.post("/admin/players/sync-users", requireAdmin, async (req: Request, res:
       const delta = ((i * 31 + (pl.minecraftUsername?.length ?? 0)) % 5) - 2;
       const desiredTier = offsetTier(baseTier, delta);
       if (!cur) {
-        byMode.set(gm, { gamemode: gm, wins: 0, losses: 0, elo: 1000, tier: desiredTier });
+        byMode.set(gm, { gamemode: gm, wins: 0, losses: 0, elo: 0, tier: desiredTier });
         changed = true;
       } else if (!cur.tier) {
         cur.tier = desiredTier;
@@ -242,7 +242,7 @@ router.post("/admin/players/sync-users", requireAdmin, async (req: Request, res:
       userId: u._id.toString(),
       minecraftUsername: playerName,
       tier: "LT1",
-      elo: 1000,
+      elo: 0,
       wins: 0,
       losses: 0,
       winStreak: 0,
@@ -352,7 +352,7 @@ router.patch("/admin/players/:id/stats", requireAdmin, async (req: Request, res:
         continue;
       }
 
-      const prev = map.get(gm) ?? { gamemode: gm, wins: 0, losses: 0, elo: 1000 };
+      const prev = map.get(gm) ?? { gamemode: gm, wins: 0, losses: 0, elo: 0 };
       const next = { ...prev, gamemode: gm };
       if (tierProvided && t && t !== "none") next.tier = t;
       if (tierProvided && (t === "none" || !t)) next.tier = null;
@@ -421,7 +421,7 @@ router.post("/admin/players/:id/reset", requireAdmin, async (req: Request, res: 
     return;
   }
 
-  await Player.findByIdAndUpdate(id, { elo: 1000, wins: 0, losses: 0, winStreak: 0, tier: "LT1" });
+  await Player.findByIdAndUpdate(id, { elo: 0, wins: 0, losses: 0, winStreak: 0, tier: "LT1" });
 
   await AdminLog.create({
     adminId: adminUser.userId,
@@ -545,7 +545,7 @@ router.post("/admin/seasons/:id/reset", requireAdmin, async (req: Request, res: 
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
   const { id } = req.params;
 
-  await Player.updateMany({}, { elo: 1000, wins: 0, losses: 0, winStreak: 0, tier: "LT1" });
+  await Player.updateMany({}, { elo: 0, wins: 0, losses: 0, winStreak: 0, tier: "LT1" });
 
   await AdminLog.create({
     adminId: adminUser.userId,

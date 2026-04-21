@@ -46,7 +46,7 @@ const addSchema = z.object({
   minecraftUuid: z.string().optional(),
   discordUsername: z.string().optional(),
   tier: z.enum(TIERS),
-  elo: z.coerce.number().int().default(1000),
+  elo: z.coerce.number().int().default(0),
   wins: z.coerce.number().int().min(0).default(0),
   losses: z.coerce.number().int().min(0).default(0),
   region: z.enum(REGIONS).default("NA"),
@@ -83,7 +83,7 @@ export default function AdminPlayers() {
 
   const editForm = useForm<z.infer<typeof updateSchema>>({
     resolver: zodResolver(updateSchema),
-    defaultValues: { elo: 1000, wins: 0, losses: 0, tier: "LT1", gamemodeTiers: emptyGamemodeTiers(), gamemodeScores: emptyGamemodeScores() },
+    defaultValues: { elo: 0, wins: 0, losses: 0, tier: "LT1", gamemodeTiers: emptyGamemodeTiers(), gamemodeScores: emptyGamemodeScores() },
   });
 
   const addForm = useForm<z.infer<typeof addSchema>>({
@@ -93,7 +93,7 @@ export default function AdminPlayers() {
       minecraftUuid: "",
       discordUsername: "",
       tier: "LT1",
-      elo: 1000,
+      elo: 0,
       wins: 0,
       losses: 0,
       region: "NA",

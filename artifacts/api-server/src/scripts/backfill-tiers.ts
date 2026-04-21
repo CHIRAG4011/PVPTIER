@@ -24,7 +24,7 @@ async function main() {
       const delta = ((i * 31 + (pl.minecraftUsername?.length ?? 0)) % 5) - 2;
       const desiredTier = offsetTier(baseTier, delta);
       if (!cur) {
-        byMode.set(gm, { gamemode: gm, wins: 0, losses: 0, elo: 1000, tier: desiredTier });
+        byMode.set(gm, { gamemode: gm, wins: 0, losses: 0, elo: 0, tier: desiredTier });
         changed = true;
       } else if (!cur.tier) {
         cur.tier = desiredTier;

@@ -69,7 +69,7 @@ router.post("/auth/register", async (req: Request, res: Response): Promise<void>
             userId: user._id.toString(),
             minecraftUsername: playerName,
             tier: "LT1",
-            elo: 1000,
+            elo: 0,
             wins: 0,
             losses: 0,
             winStreak: 0,

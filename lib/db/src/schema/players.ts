@@ -12,7 +12,7 @@ export const playersTable = pgTable("players", {
   minecraftUsername: text("minecraft_username").notNull(),
   minecraftUuid: text("minecraft_uuid"),
   tier: tierEnum("tier").notNull().default("LT1"),
-  elo: integer("elo").notNull().default(1000),
+  elo: integer("elo").notNull().default(0),
   wins: integer("wins").notNull().default(0),
   losses: integer("losses").notNull().default(0),
   winStreak: integer("win_streak").notNull().default(0),
@@ -29,7 +29,7 @@ export const gamemodeStatsTable = pgTable("gamemode_stats", {
   gamemode: gamemodeEnum("gamemode").notNull(),
   wins: integer("wins").notNull().default(0),
   losses: integer("losses").notNull().default(0),
-  elo: integer("elo").notNull().default(1000),
+  elo: integer("elo").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
