@@ -128,6 +128,8 @@ export default function SubmitMatch() {
   const [, setLocation] = useLocation();
   const submitMutation = useCreateSubmission();
 
+  const prefilledOpponent = new URLSearchParams(window.location.search).get("opponent") || "";
+
   if (!isAuthenticated) {
     setLocation("/login");
     return null;
@@ -136,7 +138,7 @@ export default function SubmitMatch() {
   const form = useForm<z.infer<typeof submissionSchema>>({
     resolver: zodResolver(submissionSchema),
     defaultValues: {
-      opponentUsername: "",
+      opponentUsername: prefilledOpponent,
       gamemode: "",
       result: "win",
       evidence: "",

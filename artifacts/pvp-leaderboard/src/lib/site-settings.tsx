@@ -5,6 +5,7 @@ type SiteSettings = Record<string, string>;
 
 const defaultSettings: SiteSettings = {
   site_name: "PVPTIERS",
+  site_logo: "",
   site_description: "The most prestigious Minecraft PvP ranking platform.",
   server_ip: "play.pvp-leaderboard.net",
   discord_url: "https://discord.gg/pvptiers",

@@ -10,11 +10,11 @@ const TierTestSchema = new mongoose.Schema(
     minecraftUsername: { type: String, required: true },
     currentTier: { type: String, required: true },
     requestedTier: { type: String, required: true },
-    evidence: { type: String, default: null },
     notes: { type: String, default: null },
-    status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
+    status: { type: String, enum: ["pending", "in_queue", "approved", "rejected"], default: "pending" },
     reviewedBy: { type: String, default: null },
     reviewNote: { type: String, default: null },
+    assignedTester: { type: String, default: null },
   },
   {
     timestamps: true,
@@ -36,7 +36,7 @@ const router: IRouter = Router();
 router.post("/tier-test/apply", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const user = (req as Request & { user?: JwtPayload }).user!;
 
-  const { minecraftUsername, currentTier, requestedTier, evidence, notes } = req.body;
+  const { minecraftUsername, currentTier, requestedTier, notes } = req.body;
 
   if (!minecraftUsername || !currentTier || !requestedTier) {
     res.status(400).json({ error: "validation_error", message: "minecraftUsername, currentTier, and requestedTier are required" });
@@ -55,7 +55,6 @@ router.post("/tier-test/apply", requireAuth, async (req: Request, res: Response)
     minecraftUsername,
     currentTier,
     requestedTier,
-    evidence: evidence ?? null,
     notes: notes ?? null,
   });
 
@@ -88,6 +87,32 @@ router.get("/tier-test", requireAdmin, async (req: Request, res: Response): Prom
     page,
     totalPages: Math.ceil(total / limit),
   });
+});
+
+router.post("/tier-test/:id/queue", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const adminUser = (req as Request & { user?: JwtPayload }).user!;
+  const { id } = req.params;
+  const { assignedTester, reviewNote } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400).json({ error: "invalid_id", message: "Invalid application ID" });
+    return;
+  }
+
+  const application = await TierTest.findById(id);
+  if (!application) {
+    res.status(404).json({ error: "not_found", message: "Application not found" });
+    return;
+  }
+
+  await TierTest.findByIdAndUpdate(id, {
+    status: "in_queue",
+    reviewedBy: adminUser.userId,
+    assignedTester: assignedTester ?? null,
+    reviewNote: reviewNote ?? "Accepted — a tier tester will contact you to schedule the fight.",
+  });
+
+  res.json({ success: true, message: "Player moved to queue. A tier tester will be assigned." });
 });
 
 router.post("/tier-test/:id/approve", requireAdmin, async (req: Request, res: Response): Promise<void> => {

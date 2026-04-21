@@ -1,16 +1,19 @@
 import { Layout } from "@/components/layout/Layout";
 import { useGetPlayer, useGetPlayerStats, useGetPlayerMatches } from "@workspace/api-client-react";
-import { useParams } from "wouter";
+import { useParams, Link } from "wouter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TierBadge } from "@/components/ui/tier-badge";
 import { GamemodeIcon } from "@/components/ui/gamemode-icon";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { Trophy, Swords, MapPin, Calendar, Activity, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
 
 export default function PlayerProfile() {
   const params = useParams();
   const id = params.id || "";
+  const { user, isAuthenticated } = useAuth();
 
   const { data: player, isLoading: playerLoading } = useGetPlayer(id as any);
   const { data: stats, isLoading: statsLoading } = useGetPlayerStats(id as any);
@@ -120,6 +123,17 @@ export default function PlayerProfile() {
                   </p>
                 </div>
               </div>
+
+              {isAuthenticated && user?.id !== id && (
+                <div className="flex gap-3 mt-4 justify-center md:justify-start">
+                  <Button asChild className="gap-2" size="sm">
+                    <Link href={`/submit?opponent=${encodeURIComponent(player.minecraftUsername)}`}>
+                      <Swords className="w-4 h-4" />
+                      Challenge {player.minecraftUsername}
+                    </Link>
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>

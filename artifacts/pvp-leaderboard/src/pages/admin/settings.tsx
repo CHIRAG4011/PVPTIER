@@ -15,6 +15,7 @@ const SECTION_FIELDS = {
     icon: Globe,
     fields: [
       { key: "site_name", label: "Site Name", placeholder: "PVPTIERS" },
+      { key: "site_logo", label: "Logo Image URL", placeholder: "https://example.com/logo.png (leave blank to use text logo)" },
       { key: "site_description", label: "Site Description", placeholder: "The most prestigious Minecraft PvP ranking platform.", multiline: true },
       { key: "server_ip", label: "Server IP Address", placeholder: "play.pvp-leaderboard.net", icon: Server },
     ],

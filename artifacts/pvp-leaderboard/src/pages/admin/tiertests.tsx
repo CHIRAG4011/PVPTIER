@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, X, ChevronLeft, ChevronRight, ExternalLink, Trophy } from "lucide-react";
+import { Check, X, ChevronLeft, ChevronRight, Trophy, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 
@@ -18,6 +18,23 @@ async function fetchApplications(page: number, status: string) {
   return res.json();
 }
 
+function statusBadge(status: string) {
+  const map: Record<string, string> = {
+    pending: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+    in_queue: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+    approved: "bg-green-500/10 text-green-400 border-green-500/20",
+    rejected: "bg-red-500/10 text-red-500 border-red-500/20",
+  };
+  const label: Record<string, string> = {
+    pending: "Pending", in_queue: "In Queue", approved: "Approved", rejected: "Rejected",
+  };
+  return (
+    <span className={`text-xs px-2 py-1 rounded font-bold uppercase border ${map[status] || ""}`}>
+      {label[status] || status}
+    </span>
+  );
+}
+
 export default function AdminTierTests() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("pending");
@@ -28,54 +45,50 @@ export default function AdminTierTests() {
     queryFn: () => fetchApplications(page, status),
   });
 
-  const handleApprove = async (id: string, applicantUsername: string, requestedTier: string) => {
-    const reviewNote = prompt(`Approve ${applicantUsername}'s application for ${requestedTier}? Add a review note (optional):`);
-    if (reviewNote === null) return;
+  const callAction = async (id: string, action: "queue" | "approve" | "reject", body: object = {}) => {
     setProcessing(id);
     const token = localStorage.getItem("pvp_token");
     try {
-      const res = await fetch(apiUrl(`/api/tier-test/${id}/approve`), {
+      const res = await fetch(apiUrl(`/api/tier-test/${id}/${action}`), {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ reviewNote }),
+        body: JSON.stringify(body),
       });
       const d = await res.json();
       if (d.success) {
-        toast.success(`Approved! ${applicantUsername} is now ${requestedTier}`);
         refetch();
+        return true;
       } else {
-        toast.error(d.message || "Failed to approve");
+        toast.error(d.message || `Failed to ${action}`);
+        return false;
       }
     } catch {
       toast.error("Network error");
+      return false;
     } finally {
       setProcessing(null);
     }
   };
 
-  const handleReject = async (id: string, applicantUsername: string) => {
-    const reviewNote = prompt(`Reason for rejecting ${applicantUsername}'s application (optional):`);
+  const handleQueue = async (app: any) => {
+    const tester = prompt(`Accept ${app.applicantUsername}'s application and move to queue?\nEnter tier tester's IGN to assign (optional):`);
+    if (tester === null) return;
+    const ok = await callAction(app.id, "queue", { assignedTester: tester || null });
+    if (ok) toast.success(`${app.applicantUsername} moved to queue. A tier tester will be assigned.`);
+  };
+
+  const handleApprove = async (app: any) => {
+    const reviewNote = prompt(`Approve ${app.applicantUsername} for ${app.requestedTier}? Add a note (optional):`);
     if (reviewNote === null) return;
-    setProcessing(id);
-    const token = localStorage.getItem("pvp_token");
-    try {
-      const res = await fetch(apiUrl(`/api/tier-test/${id}/reject`), {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ reviewNote }),
-      });
-      const d = await res.json();
-      if (d.success) {
-        toast.success(`Rejected ${applicantUsername}'s tier test application.`);
-        refetch();
-      } else {
-        toast.error(d.message || "Failed to reject");
-      }
-    } catch {
-      toast.error("Network error");
-    } finally {
-      setProcessing(null);
-    }
+    const ok = await callAction(app.id, "approve", { reviewNote });
+    if (ok) toast.success(`Approved! ${app.applicantUsername} is now ${app.requestedTier}`);
+  };
+
+  const handleReject = async (app: any) => {
+    const reviewNote = prompt(`Reason for rejecting ${app.applicantUsername}'s application (optional):`);
+    if (reviewNote === null) return;
+    const ok = await callAction(app.id, "reject", { reviewNote });
+    if (ok) toast.success(`Rejected ${app.applicantUsername}'s tier test application.`);
   };
 
   return (
@@ -87,7 +100,7 @@ export default function AdminTierTests() {
               <Trophy className="w-7 h-7 text-primary" />
               Tier Test Applications
             </h1>
-            <p className="text-muted-foreground">Review player tier test requests.</p>
+            <p className="text-muted-foreground">Review and manage player tier test requests.</p>
           </div>
 
           <Select value={status} onValueChange={(v) => { setStatus(v); setPage(1); }}>
@@ -96,6 +109,7 @@ export default function AdminTierTests() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="in_queue">In Queue</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
               <SelectItem value="rejected">Rejected</SelectItem>
               <SelectItem value="all">All</SelectItem>
@@ -110,8 +124,8 @@ export default function AdminTierTests() {
                 <TableHead>Applicant</TableHead>
                 <TableHead>IGN</TableHead>
                 <TableHead>Tier Change</TableHead>
-                <TableHead>Evidence</TableHead>
                 <TableHead>Notes</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -128,7 +142,7 @@ export default function AdminTierTests() {
               ) : (data?.applications ?? []).length === 0 ? (
                 <TableRow className="border-border">
                   <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                    No {status !== "all" ? status : ""} applications found.
+                    No {status !== "all" ? status.replace("_", " ") : ""} applications found.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -145,15 +159,6 @@ export default function AdminTierTests() {
                         <span className="text-primary font-bold">{app.requestedTier}</span>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      {app.evidence ? (
-                        <a href={app.evidence} target="_blank" rel="noreferrer" className="text-primary hover:underline flex items-center gap-1 text-sm">
-                          View <ExternalLink className="w-3 h-3" />
-                        </a>
-                      ) : (
-                        <span className="text-muted-foreground text-sm italic">None</span>
-                      )}
-                    </TableCell>
                     <TableCell className="max-w-[150px]">
                       {app.notes ? (
                         <span className="text-xs text-muted-foreground truncate block">{app.notes}</span>
@@ -161,43 +166,69 @@ export default function AdminTierTests() {
                         <span className="text-muted-foreground text-sm italic">—</span>
                       )}
                     </TableCell>
+                    <TableCell>
+                      <div>
+                        {statusBadge(app.status)}
+                        {app.assignedTester && (
+                          <div className="text-xs text-blue-400 mt-1">Tester: {app.assignedTester}</div>
+                        )}
+                        {app.reviewNote && (
+                          <div className="text-xs text-muted-foreground mt-1 max-w-[140px] truncate">{app.reviewNote}</div>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {new Date(app.createdAt).toLocaleDateString()}
                     </TableCell>
-                    <TableCell className="text-right space-x-2">
-                      {app.status === "pending" ? (
-                        <>
-                          <Button
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                            onClick={() => handleApprove(app.id, app.applicantUsername, app.requestedTier)}
-                            disabled={processing === app.id}
-                          >
-                            <Check className="w-4 h-4 mr-1" /> Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleReject(app.id, app.applicantUsername)}
-                            disabled={processing === app.id}
-                          >
-                            <X className="w-4 h-4 mr-1" /> Reject
-                          </Button>
-                        </>
-                      ) : (
-                        <div>
-                          <span className={`text-xs px-2 py-1 rounded font-bold uppercase border ${
-                            app.status === "approved"
-                              ? "bg-green-500/10 text-green-500 border-green-500/20"
-                              : "bg-red-500/10 text-red-500 border-red-500/20"
-                          }`}>
-                            {app.status}
-                          </span>
-                          {app.reviewNote && (
-                            <div className="text-xs text-muted-foreground mt-1">{app.reviewNote}</div>
-                          )}
-                        </div>
-                      )}
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1 flex-wrap">
+                        {app.status === "pending" && (
+                          <>
+                            <Button
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                              onClick={() => handleQueue(app)}
+                              disabled={processing === app.id}
+                              title="Accept and move to queue"
+                            >
+                              <Users className="w-3 h-3 mr-1" /> Queue
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="text-xs"
+                              onClick={() => handleReject(app)}
+                              disabled={processing === app.id}
+                            >
+                              <X className="w-3 h-3 mr-1" /> Reject
+                            </Button>
+                          </>
+                        )}
+                        {app.status === "in_queue" && (
+                          <>
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white text-xs"
+                              onClick={() => handleApprove(app)}
+                              disabled={processing === app.id}
+                            >
+                              <Check className="w-3 h-3 mr-1" /> Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="text-xs"
+                              onClick={() => handleReject(app)}
+                              disabled={processing === app.id}
+                            >
+                              <X className="w-3 h-3 mr-1" /> Reject
+                            </Button>
+                          </>
+                        )}
+                        {(app.status === "approved" || app.status === "rejected") && (
+                          <span className="text-xs text-muted-foreground italic">Closed</span>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -208,7 +239,7 @@ export default function AdminTierTests() {
           {data && data.totalPages > 1 && (
             <div className="p-4 border-t border-border flex items-center justify-between bg-muted/10">
               <p className="text-sm text-muted-foreground">
-                Showing page {data.page} of {data.totalPages}
+                Page {data.page} of {data.totalPages}
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>

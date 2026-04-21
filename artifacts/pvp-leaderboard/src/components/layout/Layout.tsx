@@ -1,7 +1,12 @@
 import { ReactNode } from "react";
 import { Navbar } from "./Navbar";
+import { useSiteSettings } from "@/lib/site-settings";
 
 export function Layout({ children }: { children: ReactNode }) {
+  const settings = useSiteSettings();
+  const siteName = settings.site_name || "PVPTIERS";
+  const discordUrl = settings.discord_url || "#";
+
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background text-foreground">
       <Navbar />
@@ -14,13 +19,19 @@ export function Layout({ children }: { children: ReactNode }) {
       <footer className="py-8 border-t border-border bg-card/30 backdrop-blur-md">
         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
           <div>
-            <span className="font-display font-bold text-lg text-foreground">
-              PVP<span className="text-primary">TIERS</span>
-            </span>
-            <p className="mt-1">The elite competitive Minecraft PvP ranking platform.</p>
+            {settings.site_logo ? (
+              <img src={settings.site_logo} alt={siteName} className="h-8 w-auto max-w-[160px] object-contain mb-1" />
+            ) : (
+              <span className="font-display font-bold text-lg text-foreground">
+                {siteName.slice(0, -5).toUpperCase() || "PVP"}<span className="text-primary">{siteName.slice(-5).toUpperCase() || "TIERS"}</span>
+              </span>
+            )}
+            <p className="mt-1">{settings.site_description || "The elite competitive Minecraft PvP ranking platform."}</p>
           </div>
           <div className="flex gap-4">
-            <a href="#" className="hover:text-primary transition-colors">Discord</a>
+            {discordUrl && discordUrl !== "#" && (
+              <a href={discordUrl} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Discord</a>
+            )}
             <a href="#" className="hover:text-primary transition-colors">Terms</a>
             <a href="#" className="hover:text-primary transition-colors">Rules</a>
           </div>

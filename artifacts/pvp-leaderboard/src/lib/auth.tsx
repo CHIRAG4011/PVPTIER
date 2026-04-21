@@ -38,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     localStorage.removeItem("pvp_token");
     setTokenState(null);
+    window.location.href = "/";
   };
 
   useEffect(() => {

@@ -48,10 +48,22 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
 }
 
 export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
-  requireAuth(req, res, () => {
-    const user = (req as Request & { user?: JwtPayload }).user;
-    if (!user || !["admin", "superadmin", "moderator"].includes(user.role)) {
+  requireAuth(req, res, async () => {
+    const jwtUser = (req as Request & { user?: JwtPayload }).user;
+    if (!jwtUser) {
       res.status(403).json({ error: "forbidden", message: "Admin access required" });
+      return;
+    }
+    try {
+      const { User } = await import("@workspace/db");
+      const dbUser = await User.findById(jwtUser.userId).select("role isBanned").lean();
+      if (!dbUser || dbUser.isBanned || !["admin", "superadmin", "moderator"].includes((dbUser as any).role)) {
+        res.status(403).json({ error: "forbidden", message: "Admin access required" });
+        return;
+      }
+      (req as Request & { user?: JwtPayload }).user = { ...jwtUser, role: (dbUser as any).role };
+    } catch {
+      res.status(500).json({ error: "server_error", message: "Failed to verify role" });
       return;
     }
     next();

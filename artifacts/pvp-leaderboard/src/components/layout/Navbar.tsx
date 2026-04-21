@@ -34,12 +34,18 @@ export function Navbar() {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded bg-primary/20 flex items-center justify-center border border-primary/50 group-hover:bg-primary/30 transition-colors">
-              <Swords className="w-5 h-5 text-primary" />
-            </div>
-            <span className="font-display font-bold text-xl tracking-tight hidden sm:block">
-              {siteName.slice(0, -5).toUpperCase() || "PVP"}<span className="text-primary">{siteName.slice(-5).toUpperCase() || "TIERS"}</span>
-            </span>
+            {settings.site_logo ? (
+              <img src={settings.site_logo} alt={siteName} className="h-8 w-auto max-w-[160px] object-contain" />
+            ) : (
+              <>
+                <div className="w-8 h-8 rounded bg-primary/20 flex items-center justify-center border border-primary/50 group-hover:bg-primary/30 transition-colors">
+                  <Swords className="w-5 h-5 text-primary" />
+                </div>
+                <span className="font-display font-bold text-xl tracking-tight hidden sm:block">
+                  {siteName.slice(0, -5).toUpperCase() || "PVP"}<span className="text-primary">{siteName.slice(-5).toUpperCase() || "TIERS"}</span>
+                </span>
+              </>
+            )}
           </Link>
           
           <div className="hidden md:flex items-center gap-1">
