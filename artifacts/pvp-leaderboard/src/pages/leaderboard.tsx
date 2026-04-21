@@ -145,27 +145,35 @@ export default function Leaderboard() {
               <div className="pointer-events-none absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-primary/40 rounded-br-xl" />
 
               <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
+                <table className="w-full text-sm text-left table-fixed">
+                  <colgroup>
+                    <col className="w-[88px]" />
+                    <col />
+                    <col className="w-[120px]" />
+                    <col className="w-[120px]" />
+                    <col className="w-[100px]" />
+                    <col className="w-[110px]" />
+                  </colgroup>
                   <thead className="text-xs uppercase bg-gradient-to-r from-muted/40 via-primary/5 to-muted/40 text-muted-foreground border-b border-primary/20">
                     <tr>
-                      <th className="px-6 py-4 font-bold tracking-widest">Rank</th>
-                      <th className="px-6 py-4 font-bold tracking-widest">Player</th>
-                      <th className="px-6 py-4 font-bold tracking-widest text-right">Score</th>
-                      <th className="px-6 py-4 font-bold tracking-widest text-center">W / L</th>
-                      <th className="px-6 py-4 font-bold tracking-widest text-center">Region</th>
-                      <th className="px-6 py-4 font-bold tracking-widest text-center">Tier</th>
+                      <th className="px-4 py-4 font-bold tracking-widest text-center">Rank</th>
+                      <th className="px-4 py-4 font-bold tracking-widest">Player</th>
+                      <th className="px-4 py-4 font-bold tracking-widest text-center">Score</th>
+                      <th className="px-4 py-4 font-bold tracking-widest text-center">W / L</th>
+                      <th className="px-4 py-4 font-bold tracking-widest text-center">Region</th>
+                      <th className="px-4 py-4 font-bold tracking-widest text-center">Tier</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/40">
                     {leaderboardLoading ? (
                       Array.from({ length: 10 }).map((_, i) => (
                         <tr key={i}>
-                          <td className="px-6 py-4"><Skeleton className="h-6 w-6 rounded-full" /></td>
-                          <td className="px-6 py-4"><Skeleton className="h-8 w-32" /></td>
-                          <td className="px-6 py-4"><Skeleton className="h-6 w-12 ml-auto" /></td>
-                          <td className="px-6 py-4"><Skeleton className="h-6 w-16 mx-auto" /></td>
-                          <td className="px-6 py-4"><Skeleton className="h-6 w-20 mx-auto" /></td>
-                          <td className="px-6 py-4"><Skeleton className="h-6 w-20 mx-auto" /></td>
+                          <td className="px-4 py-4"><Skeleton className="h-10 w-10 rounded-xl mx-auto" /></td>
+                          <td className="px-4 py-4"><Skeleton className="h-8 w-32" /></td>
+                          <td className="px-4 py-4"><Skeleton className="h-6 w-16 mx-auto" /></td>
+                          <td className="px-4 py-4"><Skeleton className="h-6 w-20 mx-auto" /></td>
+                          <td className="px-4 py-4"><Skeleton className="h-6 w-12 mx-auto" /></td>
+                          <td className="px-4 py-4"><Skeleton className="h-6 w-16 mx-auto" /></td>
                         </tr>
                       ))
                     ) : leaderboard?.entries.length === 0 ? (
@@ -188,44 +196,44 @@ export default function Leaderboard() {
                           className={`relative hover:bg-primary/5 transition-all duration-300 group scanline-overlay animate-row-rise before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-r ${rowAccent} ${isTop ? 'bg-gradient-to-r from-primary/[0.04] to-transparent' : ''}`}
                           style={{ animationDelay: `${i * 30}ms` }}
                         >
-                          <td className="px-6 py-4">
-                            <RankBadge rank={entry.rank} />
+                          <td className="px-4 py-4 text-center">
+                            <div className="inline-flex"><RankBadge rank={entry.rank} /></div>
                           </td>
-                          <td className="px-6 py-4">
-                            <Link href={`/player/${entry.player.id}`} className="flex items-center gap-3 transition-all">
-                              <div className={`relative ${isTop ? 'holo-ring rounded-full' : ''}`}>
+                          <td className="px-4 py-4">
+                            <Link href={`/player/${entry.player.id}`} className="flex items-center gap-3 transition-all min-w-0">
+                              <div className={`relative shrink-0 ${isTop ? 'holo-ring rounded-full' : ''}`}>
                                 <Avatar className={`h-10 w-10 border transition-all ${isTop ? 'border-primary/60 shadow-[0_0_12px_-2px_hsl(var(--primary)/0.6)]' : 'border-border group-hover:border-primary'}`}>
                                   <AvatarImage src={`https://mc-heads.net/avatar/${entry.player.minecraftUsername}/64`} />
                                   <AvatarFallback>{entry.player.minecraftUsername.substring(0, 2).toUpperCase()}</AvatarFallback>
                                 </Avatar>
                               </div>
-                              <div className="flex flex-col">
-                                <span className="font-bold text-base group-hover:text-primary transition-colors leading-tight">{entry.player.minecraftUsername}</span>
+                              <div className="flex flex-col min-w-0">
+                                <span className="font-bold text-base group-hover:text-primary transition-colors leading-tight truncate">{entry.player.minecraftUsername}</span>
                                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground/70 font-mono">#{String(entry.rank).padStart(4, '0')}</span>
                               </div>
                             </Link>
                           </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="inline-flex flex-col items-end">
-                              <span className={`font-mono font-bold text-xl ${isTop ? 'shimmer-text' : 'text-primary neon-text-primary'}`}>
+                          <td className="px-4 py-4 text-center">
+                            <div className="inline-flex flex-col items-center">
+                              <span className={`font-mono font-bold text-xl leading-none ${isTop ? 'shimmer-text' : 'text-primary neon-text-primary'}`}>
                                 {entry.elo.toLocaleString()}
                               </span>
-                              <span className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-mono">SCORE</span>
+                              <span className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-mono mt-1">SCORE</span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-center">
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/20 border border-border/50">
-                              <span className="text-green-400 font-bold font-mono">{entry.wins}<span className="text-[10px] ml-0.5 opacity-70">W</span></span>
+                          <td className="px-4 py-4 text-center">
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-muted/20 border border-border/50">
+                              <span className="text-green-400 font-bold font-mono text-sm">{entry.wins}<span className="text-[10px] ml-0.5 opacity-70">W</span></span>
                               <span className="text-muted-foreground/40">/</span>
-                              <span className="text-red-400 font-bold font-mono">{entry.losses}<span className="text-[10px] ml-0.5 opacity-70">L</span></span>
+                              <span className="text-red-400 font-bold font-mono text-sm">{entry.losses}<span className="text-[10px] ml-0.5 opacity-70">L</span></span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-center">
+                          <td className="px-4 py-4 text-center">
                             <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md bg-muted/30 border border-border/50 text-xs font-mono font-bold tracking-wider uppercase text-foreground">
                               {(entry.player as any).region ?? "—"}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-center">
+                          <td className="px-4 py-4 text-center">
                             {(() => {
                               const gmTier = ((entry.player as any).gamemodeStats ?? []).find((s: any) => s.gamemode === gamemode)?.tier;
                               return gmTier
