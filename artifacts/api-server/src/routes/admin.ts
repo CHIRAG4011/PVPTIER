@@ -142,16 +142,34 @@ router.patch("/admin/users/:id/role", requireAdmin, async (req: Request, res: Re
   res.json({ success: true, message: "Role updated" });
 });
 
+const TierEnum = z.enum(["LT1", "LT2", "LT3", "LT4", "LT5", "HT1", "HT2", "HT3", "HT4", "HT5"]);
+const GamemodeTier = z.union([TierEnum, z.literal("none"), z.null()]).optional();
+
 const CreatePlayerBody = z.object({
   minecraftUsername: z.string().min(1).max(16),
   minecraftUuid: z.string().optional(),
   discordUsername: z.string().optional(),
-  tier: z.enum(["LT1", "LT2", "LT3", "LT4", "LT5", "HT1", "HT2", "HT3", "HT4", "HT5"]).default("LT1"),
+  tier: TierEnum.default("LT1"),
   elo: z.number().int().default(1000),
   wins: z.number().int().min(0).default(0),
   losses: z.number().int().min(0).default(0),
   region: z.string().default("NA"),
+  gamemodeTiers: z.record(z.string(), GamemodeTier).optional(),
 });
+
+const SUPPORTED_GAMEMODES = ["sword", "axe", "uhc", "vanilla", "smp", "diapot", "nethpot", "elytra"];
+
+function buildGamemodeStats(gamemodeTiers?: Record<string, string | null | undefined>) {
+  if (!gamemodeTiers) return [];
+  const stats: any[] = [];
+  for (const gm of SUPPORTED_GAMEMODES) {
+    const t = gamemodeTiers[gm];
+    if (t && t !== "none") {
+      stats.push({ gamemode: gm, wins: 0, losses: 0, elo: 1000, tier: t });
+    }
+  }
+  return stats;
+}
 
 router.post("/admin/players", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const adminUser = (req as Request & { user?: JwtPayload }).user!;
@@ -177,6 +195,7 @@ router.post("/admin/players", requireAdmin, async (req: Request, res: Response):
     wins: parsed.data.wins,
     losses: parsed.data.losses,
     region: parsed.data.region,
+    gamemodeStats: buildGamemodeStats(parsed.data.gamemodeTiers as any),
   });
 
   await AdminLog.create({
@@ -209,6 +228,24 @@ router.patch("/admin/players/:id/stats", requireAdmin, async (req: Request, res:
   if (parsed.data.wins !== undefined) updates.wins = parsed.data.wins;
   if (parsed.data.losses !== undefined) updates.losses = parsed.data.losses;
   if (parsed.data.tier !== undefined) updates.tier = parsed.data.tier;
+
+  const rawTiers = (req.body as any)?.gamemodeTiers as Record<string, string | null | undefined> | undefined;
+  if (rawTiers && typeof rawTiers === "object") {
+    const existing = await Player.findById(id);
+    const current: any[] = existing?.gamemodeStats ? JSON.parse(JSON.stringify(existing.gamemodeStats)) : [];
+    const map = new Map<string, any>(current.map(s => [s.gamemode, s]));
+    for (const gm of SUPPORTED_GAMEMODES) {
+      if (!(gm in rawTiers)) continue;
+      const t = rawTiers[gm];
+      if (!t || t === "none") {
+        map.delete(gm);
+      } else {
+        const prev = map.get(gm) ?? { gamemode: gm, wins: 0, losses: 0, elo: 1000 };
+        map.set(gm, { ...prev, gamemode: gm, tier: t });
+      }
+    }
+    updates.gamemodeStats = Array.from(map.values());
+  }
 
   await Player.findByIdAndUpdate(id, updates);
 

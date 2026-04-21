@@ -19,6 +19,13 @@ function formatPlayer(p: any, rank?: number) {
     discordUsername: p.discordUsername,
     region: p.region,
     badges: p.badges ?? [],
+    gamemodeStats: (p.gamemodeStats ?? []).map((s: any) => ({
+      gamemode: s.gamemode,
+      tier: s.tier ?? null,
+      elo: s.elo ?? 0,
+      wins: s.wins ?? 0,
+      losses: s.losses ?? 0,
+    })),
     createdAt: p.createdAt,
     ...(rank !== undefined ? { rank } : {}),
   };

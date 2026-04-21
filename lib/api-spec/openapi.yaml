@@ -909,6 +909,10 @@ components:
           type: array
           items:
             type: string
+        gamemodeStats:
+          type: array
+          items:
+            $ref: "#/components/schemas/GamemodeStat"
         createdAt:
           type: string
           format: date-time
@@ -977,6 +981,10 @@ components:
           type: integer
         elo:
           type: integer
+        tier:
+          type: string
+          nullable: true
+          enum: [LT1, LT2, LT3, LT4, LT5, HT1, HT2, HT3, HT4, HT5, null]
         kd:
           type: number
         winRate:
@@ -1361,6 +1369,11 @@ components:
         tier:
           type: string
           enum: [LT1, LT2, LT3, LT4, LT5, HT1, HT2, HT3, HT4, HT5]
+        gamemodeTiers:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [none, LT1, LT2, LT3, LT4, LT5, HT1, HT2, HT3, HT4, HT5]
 
     AdminAnalytics:
       type: object

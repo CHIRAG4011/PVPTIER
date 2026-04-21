@@ -111,6 +111,42 @@ export const ListPlayersResponse = zod.object({
       discordUsername: zod.string().optional(),
       region: zod.string().optional(),
       badges: zod.array(zod.string()).optional(),
+      gamemodeStats: zod
+        .array(
+          zod.object({
+            gamemode: zod.enum([
+              "sword",
+              "axe",
+              "uhc",
+              "vanilla",
+              "smp",
+              "diapot",
+              "nethpot",
+              "elytra",
+            ]),
+            wins: zod.number(),
+            losses: zod.number(),
+            elo: zod.number(),
+            tier: zod
+              .union([
+                zod.literal("LT1"),
+                zod.literal("LT2"),
+                zod.literal("LT3"),
+                zod.literal("LT4"),
+                zod.literal("LT5"),
+                zod.literal("HT1"),
+                zod.literal("HT2"),
+                zod.literal("HT3"),
+                zod.literal("HT4"),
+                zod.literal("HT5"),
+                zod.literal(null),
+              ])
+              .nullish(),
+            kd: zod.number(),
+            winRate: zod.number(),
+          }),
+        )
+        .optional(),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -151,6 +187,42 @@ export const GetPlayerResponse = zod
     discordUsername: zod.string().optional(),
     region: zod.string().optional(),
     badges: zod.array(zod.string()).optional(),
+    gamemodeStats: zod
+      .array(
+        zod.object({
+          gamemode: zod.enum([
+            "sword",
+            "axe",
+            "uhc",
+            "vanilla",
+            "smp",
+            "diapot",
+            "nethpot",
+            "elytra",
+          ]),
+          wins: zod.number(),
+          losses: zod.number(),
+          elo: zod.number(),
+          tier: zod
+            .union([
+              zod.literal("LT1"),
+              zod.literal("LT2"),
+              zod.literal("LT3"),
+              zod.literal("LT4"),
+              zod.literal("LT5"),
+              zod.literal("HT1"),
+              zod.literal("HT2"),
+              zod.literal("HT3"),
+              zod.literal("HT4"),
+              zod.literal("HT5"),
+              zod.literal(null),
+            ])
+            .nullish(),
+          kd: zod.number(),
+          winRate: zod.number(),
+        }),
+      )
+      .optional(),
     createdAt: zod.coerce.date(),
   })
   .and(
@@ -171,6 +243,21 @@ export const GetPlayerResponse = zod
             wins: zod.number(),
             losses: zod.number(),
             elo: zod.number(),
+            tier: zod
+              .union([
+                zod.literal("LT1"),
+                zod.literal("LT2"),
+                zod.literal("LT3"),
+                zod.literal("LT4"),
+                zod.literal("LT5"),
+                zod.literal("HT1"),
+                zod.literal("HT2"),
+                zod.literal("HT3"),
+                zod.literal("HT4"),
+                zod.literal("HT5"),
+                zod.literal(null),
+              ])
+              .nullish(),
             kd: zod.number(),
             winRate: zod.number(),
           }),
@@ -216,6 +303,21 @@ export const GetPlayerStatsResponse = zod.object({
       wins: zod.number(),
       losses: zod.number(),
       elo: zod.number(),
+      tier: zod
+        .union([
+          zod.literal("LT1"),
+          zod.literal("LT2"),
+          zod.literal("LT3"),
+          zod.literal("LT4"),
+          zod.literal("LT5"),
+          zod.literal("HT1"),
+          zod.literal("HT2"),
+          zod.literal("HT3"),
+          zod.literal("HT4"),
+          zod.literal("HT5"),
+          zod.literal(null),
+        ])
+        .nullish(),
       kd: zod.number(),
       winRate: zod.number(),
     }),
@@ -290,6 +392,42 @@ export const GetLeaderboardResponse = zod.object({
         discordUsername: zod.string().optional(),
         region: zod.string().optional(),
         badges: zod.array(zod.string()).optional(),
+        gamemodeStats: zod
+          .array(
+            zod.object({
+              gamemode: zod.enum([
+                "sword",
+                "axe",
+                "uhc",
+                "vanilla",
+                "smp",
+                "diapot",
+                "nethpot",
+                "elytra",
+              ]),
+              wins: zod.number(),
+              losses: zod.number(),
+              elo: zod.number(),
+              tier: zod
+                .union([
+                  zod.literal("LT1"),
+                  zod.literal("LT2"),
+                  zod.literal("LT3"),
+                  zod.literal("LT4"),
+                  zod.literal("LT5"),
+                  zod.literal("HT1"),
+                  zod.literal("HT2"),
+                  zod.literal("HT3"),
+                  zod.literal("HT4"),
+                  zod.literal("HT5"),
+                  zod.literal(null),
+                ])
+                .nullish(),
+              kd: zod.number(),
+              winRate: zod.number(),
+            }),
+          )
+          .optional(),
         createdAt: zod.coerce.date(),
       }),
       elo: zod.number(),
@@ -347,6 +485,42 @@ export const GetTopPlayersResponse = zod.object({
       discordUsername: zod.string().optional(),
       region: zod.string().optional(),
       badges: zod.array(zod.string()).optional(),
+      gamemodeStats: zod
+        .array(
+          zod.object({
+            gamemode: zod.enum([
+              "sword",
+              "axe",
+              "uhc",
+              "vanilla",
+              "smp",
+              "diapot",
+              "nethpot",
+              "elytra",
+            ]),
+            wins: zod.number(),
+            losses: zod.number(),
+            elo: zod.number(),
+            tier: zod
+              .union([
+                zod.literal("LT1"),
+                zod.literal("LT2"),
+                zod.literal("LT3"),
+                zod.literal("LT4"),
+                zod.literal("LT5"),
+                zod.literal("HT1"),
+                zod.literal("HT2"),
+                zod.literal("HT3"),
+                zod.literal("HT4"),
+                zod.literal("HT5"),
+                zod.literal(null),
+              ])
+              .nullish(),
+            kd: zod.number(),
+            winRate: zod.number(),
+          }),
+        )
+        .optional(),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -375,6 +549,42 @@ export const GetTopPlayersResponse = zod.object({
       discordUsername: zod.string().optional(),
       region: zod.string().optional(),
       badges: zod.array(zod.string()).optional(),
+      gamemodeStats: zod
+        .array(
+          zod.object({
+            gamemode: zod.enum([
+              "sword",
+              "axe",
+              "uhc",
+              "vanilla",
+              "smp",
+              "diapot",
+              "nethpot",
+              "elytra",
+            ]),
+            wins: zod.number(),
+            losses: zod.number(),
+            elo: zod.number(),
+            tier: zod
+              .union([
+                zod.literal("LT1"),
+                zod.literal("LT2"),
+                zod.literal("LT3"),
+                zod.literal("LT4"),
+                zod.literal("LT5"),
+                zod.literal("HT1"),
+                zod.literal("HT2"),
+                zod.literal("HT3"),
+                zod.literal("HT4"),
+                zod.literal("HT5"),
+                zod.literal(null),
+              ])
+              .nullish(),
+            kd: zod.number(),
+            winRate: zod.number(),
+          }),
+        )
+        .optional(),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -671,6 +881,24 @@ export const AdminUpdatePlayerStatsBody = zod.object({
       "HT5",
     ])
     .optional(),
+  gamemodeTiers: zod
+    .record(
+      zod.string(),
+      zod.enum([
+        "none",
+        "LT1",
+        "LT2",
+        "LT3",
+        "LT4",
+        "LT5",
+        "HT1",
+        "HT2",
+        "HT3",
+        "HT4",
+        "HT5",
+      ]),
+    )
+    .optional(),
 });
 
 export const AdminUpdatePlayerStatsResponse = zod.object({
@@ -885,6 +1113,42 @@ export const GetRecentActivityResponse = zod.object({
       discordUsername: zod.string().optional(),
       region: zod.string().optional(),
       badges: zod.array(zod.string()).optional(),
+      gamemodeStats: zod
+        .array(
+          zod.object({
+            gamemode: zod.enum([
+              "sword",
+              "axe",
+              "uhc",
+              "vanilla",
+              "smp",
+              "diapot",
+              "nethpot",
+              "elytra",
+            ]),
+            wins: zod.number(),
+            losses: zod.number(),
+            elo: zod.number(),
+            tier: zod
+              .union([
+                zod.literal("LT1"),
+                zod.literal("LT2"),
+                zod.literal("LT3"),
+                zod.literal("LT4"),
+                zod.literal("LT5"),
+                zod.literal("HT1"),
+                zod.literal("HT2"),
+                zod.literal("HT3"),
+                zod.literal("HT4"),
+                zod.literal("HT5"),
+                zod.literal(null),
+              ])
+              .nullish(),
+            kd: zod.number(),
+            winRate: zod.number(),
+          }),
+        )
+        .optional(),
       createdAt: zod.coerce.date(),
     }),
   ),

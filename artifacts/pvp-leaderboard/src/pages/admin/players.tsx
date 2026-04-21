@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Trophy, Edit, RotateCcw, Trash2, ChevronLeft, ChevronRight, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { TierBadge } from "@/components/ui/tier-badge";
+import { GamemodeIcon } from "@/components/ui/gamemode-icon";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -18,12 +19,21 @@ import * as z from "zod";
 
 const TIERS = ["HT1", "HT2", "HT3", "HT4", "HT5", "LT1", "LT2", "LT3", "LT4", "LT5"] as const;
 const REGIONS = ["NA", "EU", "AS", "SA", "AF", "OC"] as const;
+const GAMEMODES = ["sword", "axe", "uhc", "vanilla", "smp", "diapot", "nethpot", "elytra"] as const;
+const GAMEMODE_LABELS: Record<string, string> = {
+  sword: "Sword", axe: "Axe", uhc: "UHC", vanilla: "Vanilla",
+  smp: "SMP", diapot: "DiaPot", nethpot: "NethPot", elytra: "Elytra",
+};
+const GAMEMODE_TIER_OPTIONS = ["none", ...TIERS] as const;
+
+const gamemodeTierSchema = z.record(z.string(), z.enum(GAMEMODE_TIER_OPTIONS)).optional();
 
 const updateSchema = z.object({
   elo: z.coerce.number().int(),
   wins: z.coerce.number().int().min(0),
   losses: z.coerce.number().int().min(0),
   tier: z.enum(TIERS),
+  gamemodeTiers: gamemodeTierSchema,
 });
 
 const addSchema = z.object({
@@ -35,7 +45,14 @@ const addSchema = z.object({
   wins: z.coerce.number().int().min(0).default(0),
   losses: z.coerce.number().int().min(0).default(0),
   region: z.enum(REGIONS).default("NA"),
+  gamemodeTiers: gamemodeTierSchema,
 });
+
+const emptyGamemodeTiers = (): Record<string, "none" | typeof TIERS[number]> => {
+  const o: any = {};
+  GAMEMODES.forEach(g => { o[g] = "none"; });
+  return o;
+};
 
 export default function AdminPlayers() {
   const [page, setPage] = useState(1);
@@ -55,7 +72,7 @@ export default function AdminPlayers() {
 
   const editForm = useForm<z.infer<typeof updateSchema>>({
     resolver: zodResolver(updateSchema),
-    defaultValues: { elo: 1000, wins: 0, losses: 0, tier: "LT1" },
+    defaultValues: { elo: 1000, wins: 0, losses: 0, tier: "LT1", gamemodeTiers: emptyGamemodeTiers() },
   });
 
   const addForm = useForm<z.infer<typeof addSchema>>({
@@ -69,16 +86,22 @@ export default function AdminPlayers() {
       wins: 0,
       losses: 0,
       region: "NA",
+      gamemodeTiers: emptyGamemodeTiers(),
     },
   });
 
   const handleEditClick = (player: any) => {
     setEditingPlayer(player);
+    const tiers = emptyGamemodeTiers();
+    (player.gamemodeStats ?? []).forEach((s: any) => {
+      if (s?.gamemode && s.tier && tiers[s.gamemode] !== undefined) tiers[s.gamemode] = s.tier;
+    });
     editForm.reset({
       elo: player.elo,
       wins: player.wins,
       losses: player.losses,
       tier: player.tier as any,
+      gamemodeTiers: tiers,
     });
   };
 
@@ -113,6 +136,7 @@ export default function AdminPlayers() {
           wins: values.wins,
           losses: values.losses,
           region: values.region,
+          gamemodeTiers: values.gamemodeTiers,
         }),
       });
       const data = await res.json();
@@ -271,6 +295,41 @@ export default function AdminPlayers() {
                     )} />
                   </div>
 
+                  <div className="pt-2 border-t border-border/50">
+                    <div className="flex items-center justify-between mb-3">
+                      <FormLabel className="text-base">Gamemode Tiers</FormLabel>
+                      <span className="text-xs text-muted-foreground">Set tier per gamemode (or leave as None)</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {GAMEMODES.map(gm => (
+                        <FormField
+                          key={gm}
+                          control={addForm.control}
+                          name={`gamemodeTiers.${gm}` as any}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2 text-xs">
+                                <GamemodeIcon gamemode={gm} className="w-3.5 h-3.5" />
+                                {GAMEMODE_LABELS[gm]}
+                              </FormLabel>
+                              <Select onValueChange={field.onChange} value={(field.value as string) ?? "none"}>
+                                <FormControl>
+                                  <SelectTrigger className="h-9 bg-background/50">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="none"><span className="text-muted-foreground">None</span></SelectItem>
+                                  {TIERS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                          )}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
                   <Button type="submit" className="w-full" disabled={addLoading}>
                     {addLoading ? "Adding Player..." : "Add Player"}
                   </Button>
@@ -383,6 +442,39 @@ export default function AdminPlayers() {
                                   </FormItem>
                                 )} />
                               </div>
+                              <div className="pt-2 border-t border-border/50">
+                                <div className="flex items-center justify-between mb-3">
+                                  <FormLabel className="text-sm">Gamemode Tiers</FormLabel>
+                                  <span className="text-xs text-muted-foreground">Set or clear per gamemode</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  {GAMEMODES.map(gm => (
+                                    <FormField
+                                      key={gm}
+                                      control={editForm.control}
+                                      name={`gamemodeTiers.${gm}` as any}
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel className="flex items-center gap-2 text-xs">
+                                            <GamemodeIcon gamemode={gm} className="w-3.5 h-3.5" />
+                                            {GAMEMODE_LABELS[gm]}
+                                          </FormLabel>
+                                          <Select onValueChange={field.onChange} value={(field.value as string) ?? "none"}>
+                                            <FormControl>
+                                              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                              <SelectItem value="none"><span className="text-muted-foreground">None</span></SelectItem>
+                                              {TIERS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                            </SelectContent>
+                                          </Select>
+                                        </FormItem>
+                                      )}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+
                               <Button type="submit" className="w-full" disabled={updateMutation.isPending}>
                                 {updateMutation.isPending ? "Saving..." : "Save Changes"}
                               </Button>

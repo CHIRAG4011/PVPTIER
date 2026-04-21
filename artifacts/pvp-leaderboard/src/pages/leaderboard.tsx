@@ -14,6 +14,39 @@ import { Skeleton } from "@/components/ui/skeleton";
 const GAMEMODES = ["sword", "axe", "uhc", "vanilla", "smp", "diapot", "nethpot", "elytra"];
 const TIERS = ["HT1", "HT2", "HT3", "HT4", "HT5", "LT1", "LT2", "LT3", "LT4", "LT5"];
 
+function tierRank(tier?: string | null): number {
+  if (!tier) return 999;
+  const isHigh = tier.startsWith("HT");
+  const num = parseInt(tier.replace(/\D/g, ""), 10) || 5;
+  return (isHigh ? 0 : 5) + num;
+}
+
+function TopGamemodes({ stats }: { stats: { gamemode: string; tier?: string | null }[] }) {
+  const ranked = stats
+    .filter(s => s.tier)
+    .sort((a, b) => tierRank(a.tier) - tierRank(b.tier))
+    .slice(0, 4);
+
+  if (ranked.length === 0) {
+    return <span className="text-xs text-muted-foreground/60">—</span>;
+  }
+
+  return (
+    <div className="flex items-center justify-center gap-1.5 flex-wrap">
+      {ranked.map(s => (
+        <div
+          key={s.gamemode}
+          className="flex items-center gap-1 px-1.5 py-1 rounded-md bg-muted/30 border border-border/50"
+          title={`${s.gamemode}: ${s.tier}`}
+        >
+          <GamemodeIcon gamemode={s.gamemode} className="w-3.5 h-3.5" />
+          <TierBadge tier={s.tier as string} size="sm" showGlow={false} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Leaderboard() {
   const [gamemode, setGamemode] = useState<string>("sword");
   const [tier, setTier] = useState<string>("all");
@@ -107,6 +140,7 @@ export default function Leaderboard() {
                       <th className="px-6 py-4 font-bold">Player</th>
                       <th className="px-6 py-4 font-bold text-right">ELO</th>
                       <th className="px-6 py-4 font-bold text-center">Tier</th>
+                      <th className="px-6 py-4 font-bold text-center">Top Gamemodes</th>
                       <th className="px-6 py-4 font-bold text-center">W/L</th>
                     </tr>
                   </thead>
@@ -123,7 +157,7 @@ export default function Leaderboard() {
                       ))
                     ) : leaderboard?.entries.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
+                        <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
                           No players found for these filters.
                         </td>
                       </tr>
@@ -154,6 +188,9 @@ export default function Leaderboard() {
                           </td>
                           <td className="px-6 py-4 text-center">
                             <TierBadge tier={entry.tier} />
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <TopGamemodes stats={(entry.player as any).gamemodeStats ?? []} />
                           </td>
                           <td className="px-6 py-4 text-center">
                             <div className="flex items-center justify-center gap-2">

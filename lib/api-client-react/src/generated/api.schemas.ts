@@ -74,22 +74,6 @@ export const PlayerTier = {
   HT5: "HT5",
 } as const;
 
-export interface Player {
-  id: number;
-  userId?: number;
-  minecraftUsername: string;
-  minecraftUuid?: string;
-  tier: PlayerTier;
-  elo: number;
-  wins: number;
-  losses: number;
-  winStreak: number;
-  discordUsername?: string;
-  region?: string;
-  badges?: string[];
-  createdAt: string;
-}
-
 export type GamemodeStatGamemode =
   (typeof GamemodeStatGamemode)[keyof typeof GamemodeStatGamemode];
 
@@ -104,13 +88,48 @@ export const GamemodeStatGamemode = {
   elytra: "elytra",
 } as const;
 
+export type GamemodeStatTier =
+  | (typeof GamemodeStatTier)[keyof typeof GamemodeStatTier]
+  | null;
+
+export const GamemodeStatTier = {
+  LT1: "LT1",
+  LT2: "LT2",
+  LT3: "LT3",
+  LT4: "LT4",
+  LT5: "LT5",
+  HT1: "HT1",
+  HT2: "HT2",
+  HT3: "HT3",
+  HT4: "HT4",
+  HT5: "HT5",
+} as const;
+
 export interface GamemodeStat {
   gamemode: GamemodeStatGamemode;
   wins: number;
   losses: number;
   elo: number;
+  tier?: GamemodeStatTier;
   kd: number;
   winRate: number;
+}
+
+export interface Player {
+  id: number;
+  userId?: number;
+  minecraftUsername: string;
+  minecraftUuid?: string;
+  tier: PlayerTier;
+  elo: number;
+  wins: number;
+  losses: number;
+  winStreak: number;
+  discordUsername?: string;
+  region?: string;
+  badges?: string[];
+  gamemodeStats?: GamemodeStat[];
+  createdAt: string;
 }
 
 export interface Match {
@@ -368,11 +387,27 @@ export const UpdatePlayerStatsBodyTier = {
   HT5: "HT5",
 } as const;
 
+export type UpdatePlayerStatsBodyGamemodeTiers = {
+  [key: string]:
+    | "none"
+    | "LT1"
+    | "LT2"
+    | "LT3"
+    | "LT4"
+    | "LT5"
+    | "HT1"
+    | "HT2"
+    | "HT3"
+    | "HT4"
+    | "HT5";
+};
+
 export interface UpdatePlayerStatsBody {
   elo?: number;
   wins?: number;
   losses?: number;
   tier?: UpdatePlayerStatsBodyTier;
+  gamemodeTiers?: UpdatePlayerStatsBodyGamemodeTiers;
 }
 
 export type AdminAnalyticsTierBreakdownItem = {

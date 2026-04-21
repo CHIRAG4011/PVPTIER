@@ -5,6 +5,7 @@ export interface IGamemodeStat {
   wins: number;
   losses: number;
   elo: number;
+  tier?: "LT1" | "LT2" | "LT3" | "LT4" | "LT5" | "HT1" | "HT2" | "HT3" | "HT4" | "HT5" | null;
 }
 
 export interface IPlayer extends Document {
@@ -30,6 +31,11 @@ const GamemodeStatSchema = new Schema<IGamemodeStat>(
     wins: { type: Number, default: 0 },
     losses: { type: Number, default: 0 },
     elo: { type: Number, default: 1000 },
+    tier: {
+      type: String,
+      enum: ["LT1", "LT2", "LT3", "LT4", "LT5", "HT1", "HT2", "HT3", "HT4", "HT5", null],
+      default: null,
+    },
   },
   { _id: false }
 );
