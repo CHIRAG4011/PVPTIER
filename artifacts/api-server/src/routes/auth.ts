@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { User } from "@workspace/db";
+import { User, Player } from "@workspace/db";
 import { RegisterUserBody, LoginUserBody } from "@workspace/api-zod";
 import { signToken, hashPassword, comparePasswords, requireAuth } from "../lib/auth";
 import type { JwtPayload } from "../lib/auth";
@@ -52,6 +52,37 @@ router.post("/auth/register", async (req: Request, res: Response): Promise<void>
       role: "user",
       isBanned: false,
     });
+
+    // Auto-create (or link) a Player record so the new user shows up in the
+    // admin Players list and can be assigned a tier.
+    try {
+      const playerName = (minecraftUsername ?? username).trim();
+      if (playerName) {
+        const existing = await Player.findOne({ minecraftUsername: playerName });
+        if (existing) {
+          if (!existing.userId) {
+            existing.userId = user._id.toString();
+            await existing.save();
+          }
+        } else {
+          await Player.create({
+            userId: user._id.toString(),
+            minecraftUsername: playerName,
+            tier: "LT1",
+            elo: 1000,
+            wins: 0,
+            losses: 0,
+            winStreak: 0,
+            region: "NA",
+            badges: [],
+            gamemodeStats: [],
+          });
+        }
+      }
+    } catch (playerErr) {
+      // Don't block registration if player creation fails; log only.
+      console.error("Failed to auto-create player for new user:", playerErr);
+    }
 
     const token = signToken({
       userId: user._id.toString(),
