@@ -3,11 +3,38 @@ import { useListSubmissions, useApproveSubmission, useRejectSubmission } from "@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExternalLink, Check, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { ExternalLink, Check, X, ChevronLeft, ChevronRight, Video, Image, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { GamemodeIcon } from "@/components/ui/gamemode-icon";
+
+function EvidenceLink({ url }: { url?: string | null }) {
+  if (!url) {
+    return (
+      <div className="flex items-center gap-1.5 text-red-400 text-sm">
+        <AlertCircle className="w-4 h-4" />
+        <span className="font-medium">No evidence</span>
+      </div>
+    );
+  }
+
+  const isVideo = /youtube|youtu\.be|medal\.tv|streamable|twitch|clips\.twitch/i.test(url);
+  const Icon = isVideo ? Video : Image;
+  const label = isVideo ? "Video" : "Screenshot";
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20 transition-colors text-sm font-medium"
+    >
+      <Icon className="w-3.5 h-3.5" />
+      View {label}
+      <ExternalLink className="w-3 h-3 opacity-70" />
+    </a>
+  );
+}
 
 export default function AdminSubmissions() {
   const [page, setPage] = useState(1);
@@ -19,20 +46,14 @@ export default function AdminSubmissions() {
 
   const handleApprove = (id: number) => {
     approveMutation.mutate({ id }, {
-      onSuccess: () => {
-        toast.success("Match submission approved.");
-        refetch();
-      },
+      onSuccess: () => { toast.success("Match approved — ELO updated."); refetch(); },
       onError: (e) => toast.error(e.message)
     });
   };
 
   const handleReject = (id: number) => {
     rejectMutation.mutate({ id }, {
-      onSuccess: () => {
-        toast.success("Match submission rejected.");
-        refetch();
-      },
+      onSuccess: () => { toast.success("Submission rejected."); refetch(); },
       onError: (e) => toast.error(e.message)
     });
   };
@@ -43,9 +64,11 @@ export default function AdminSubmissions() {
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-display font-bold text-foreground">Match Submissions</h1>
-            <p className="text-muted-foreground">Review and approve player-reported matches.</p>
+            <p className="text-muted-foreground">
+              Review player-reported matches. Check the evidence before approving — approving updates ELO.
+            </p>
           </div>
-          
+
           <Select value={status} onValueChange={(v) => { setStatus(v); setPage(1); }}>
             <SelectTrigger className="w-[200px] bg-card">
               <SelectValue placeholder="Filter by status" />
@@ -59,107 +82,116 @@ export default function AdminSubmissions() {
           </Select>
         </div>
 
-        <div className="glass-card rounded-xl overflow-hidden border-border">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-border hover:bg-transparent">
-                <TableHead>Match Details</TableHead>
-                <TableHead>Gamemode</TableHead>
-                <TableHead>Result Claimed</TableHead>
-                <TableHead>Evidence</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i} className="border-border">
-                    <TableCell><Skeleton className="h-6 w-48" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-16" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="h-8 w-32 ml-auto" /></TableCell>
-                  </TableRow>
-                ))
-              ) : data?.submissions.length === 0 ? (
-                <TableRow className="border-border">
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                    No {status !== "all" ? status : ""} submissions found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                data?.submissions.map((s) => (
-                  <TableRow key={s.id} className="border-border hover:bg-muted/20">
-                    <TableCell>
-                      <div className="text-sm">
-                        <span className="font-bold text-primary">{s.submitterUsername}</span>
-                        <span className="text-muted-foreground mx-2">vs</span>
-                        <span className="font-bold">{s.opponentUsername}</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {new Date(s.createdAt).toLocaleString()}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <GamemodeIcon gamemode={s.gamemode} size={16} />
-                        <span className="capitalize">{s.gamemode}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className={`font-bold ${s.result === 'win' ? 'text-green-400' : 'text-red-400'}`}>
-                        {s.result.toUpperCase()}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {s.evidence ? (
-                        <a href={s.evidence} target="_blank" rel="noreferrer" className="text-primary hover:underline flex items-center gap-1 text-sm">
-                          View Link <ExternalLink className="w-3 h-3" />
-                        </a>
-                      ) : (
-                        <span className="text-muted-foreground text-sm italic">None</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right space-x-2">
-                      {s.status === 'pending' ? (
-                        <>
-                          <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleApprove(s.id)} disabled={approveMutation.isPending || rejectMutation.isPending}>
-                            <Check className="w-4 h-4 mr-1" /> Approve
-                          </Button>
-                          <Button size="sm" variant="destructive" onClick={() => handleReject(s.id)} disabled={approveMutation.isPending || rejectMutation.isPending}>
-                            <X className="w-4 h-4 mr-1" /> Reject
-                          </Button>
-                        </>
-                      ) : (
-                        <span className={`text-xs px-2 py-1 rounded font-bold uppercase tracking-wider border ${
-                          s.status === 'approved' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'
-                        }`}>
-                          {s.status}
-                        </span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-
-          {data && data.totalPages > 1 && (
-            <div className="p-4 border-t border-border flex items-center justify-between bg-muted/10">
-              <p className="text-sm text-muted-foreground">
-                Showing page {data.page} of {data.totalPages}
-              </p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
-                  <ChevronLeft className="w-4 h-4" /> Prev
-                </Button>
-                <Button variant="outline" size="sm" disabled={page === data.totalPages} onClick={() => setPage(p => p + 1)}>
-                  Next <ChevronRight className="w-4 h-4" />
-                </Button>
+        <div className="space-y-3">
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="glass-card rounded-xl p-5 border-border">
+                <Skeleton className="h-6 w-64 mb-3" />
+                <Skeleton className="h-5 w-48" />
               </div>
+            ))
+          ) : (data?.submissions ?? []).length === 0 ? (
+            <div className="glass-card rounded-xl p-12 text-center text-muted-foreground border-border">
+              No {status !== "all" ? status : ""} submissions found.
             </div>
+          ) : (
+            (data?.submissions ?? []).map((s) => (
+              <div key={s.id} className="glass-card rounded-xl border-border hover:border-primary/20 transition-colors">
+                <div className="p-5">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    {/* Match Info */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2 flex-wrap">
+                        <div className="flex items-center gap-2 text-base">
+                          <img
+                            src={`https://mc-heads.net/avatar/${s.submitterUsername}/24`}
+                            className="w-6 h-6 rounded"
+                            alt=""
+                          />
+                          <span className="font-bold text-primary">{s.submitterUsername}</span>
+                        </div>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+                          s.result === "win"
+                            ? "bg-green-500/10 text-green-400 border-green-500/20"
+                            : "bg-red-500/10 text-red-400 border-red-500/20"
+                        }`}>
+                          {s.result === "win" ? "WON" : "LOST"}
+                        </span>
+                        <span className="text-muted-foreground text-sm">vs</span>
+                        <div className="flex items-center gap-2 text-base">
+                          <img
+                            src={`https://mc-heads.net/avatar/${s.opponentUsername}/24`}
+                            className="w-6 h-6 rounded"
+                            alt=""
+                          />
+                          <span className="font-bold">{s.opponentUsername}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                        <div className="flex items-center gap-1.5">
+                          <GamemodeIcon gamemode={s.gamemode} size={14} />
+                          <span className="capitalize">{s.gamemode}</span>
+                        </div>
+                        <span>{new Date(s.createdAt).toLocaleString()}</span>
+                        {s.status !== "pending" && (
+                          <span className={`text-xs px-2 py-0.5 rounded border font-bold uppercase ${
+                            s.status === "approved"
+                              ? "bg-green-500/10 text-green-500 border-green-500/20"
+                              : "bg-red-500/10 text-red-500 border-red-500/20"
+                          }`}>
+                            {s.status}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Evidence + Actions */}
+                    <div className="flex flex-col md:items-end gap-3">
+                      <EvidenceLink url={s.evidence} />
+
+                      {s.status === "pending" && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white gap-1"
+                            onClick={() => handleApprove(s.id)}
+                            disabled={approveMutation.isPending || rejectMutation.isPending}
+                          >
+                            <Check className="w-3.5 h-3.5" /> Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="gap-1"
+                            onClick={() => handleReject(s.id)}
+                            disabled={approveMutation.isPending || rejectMutation.isPending}
+                          >
+                            <X className="w-3.5 h-3.5" /> Reject
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
           )}
         </div>
+
+        {data && data.totalPages > 1 && (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">Page {data.page} of {data.totalPages}</p>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
+                <ChevronLeft className="w-4 h-4" /> Prev
+              </Button>
+              <Button variant="outline" size="sm" disabled={page === data.totalPages} onClick={() => setPage(p => p + 1)}>
+                Next <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

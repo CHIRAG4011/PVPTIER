@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Swords, ShieldAlert, Search } from "lucide-react";
+import { Swords, ShieldAlert, Search, Video, Image, Trophy, Clock, AlertCircle } from "lucide-react";
 import { apiUrl } from "@/lib/api";
 import { useState, useEffect, useRef } from "react";
 
@@ -20,7 +21,10 @@ const submissionSchema = z.object({
   opponentUsername: z.string().min(1, { message: "Opponent IGN is required" }),
   gamemode: z.string().min(1, { message: "Gamemode is required" }),
   result: z.enum(["win", "loss"], { required_error: "Result is required" }),
-  evidence: z.string().url({ message: "Must be a valid URL" }).optional().or(z.literal("")),
+  evidence: z
+    .string()
+    .min(1, { message: "Evidence (screenshot or video) is required" })
+    .url({ message: "Must be a valid URL (e.g. https://imgur.com/... or https://youtube.com/...)" }),
 });
 
 function PlayerSearchInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -32,32 +36,25 @@ function PlayerSearchInput({ value, onChange }: { value: string; onChange: (v: s
 
   useEffect(() => {
     const handler = setTimeout(async () => {
-      if (query.length < 2) {
-        setSuggestions([]);
-        return;
-      }
+      if (query.length < 2) { setSuggestions([]); return; }
       setSearching(true);
       try {
         const res = await fetch(apiUrl(`/api/players/search?q=${encodeURIComponent(query)}`));
         const data = await res.json();
         setSuggestions(data.players || []);
-      } catch {
-        setSuggestions([]);
-      } finally {
-        setSearching(false);
-      }
+      } catch { setSuggestions([]); }
+      finally { setSearching(false); }
     }, 300);
     return () => clearTimeout(handler);
   }, [query]);
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node))
         setShowSuggestions(false);
-      }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   const handleSelect = (player: any) => {
@@ -67,13 +64,6 @@ function PlayerSearchInput({ value, onChange }: { value: string; onChange: (v: s
     setSuggestions([]);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value;
-    setQuery(v);
-    onChange(v);
-    setShowSuggestions(true);
-  };
-
   return (
     <div className="relative" ref={containerRef}>
       <div className="relative">
@@ -81,38 +71,40 @@ function PlayerSearchInput({ value, onChange }: { value: string; onChange: (v: s
         <Input
           placeholder="Start typing their Minecraft IGN..."
           value={query}
-          onChange={handleChange}
+          onChange={e => { setQuery(e.target.value); onChange(e.target.value); setShowSuggestions(true); }}
           onFocus={() => query.length >= 2 && setShowSuggestions(true)}
           className="bg-background/50 border-border/50 pl-9"
           autoComplete="off"
         />
       </div>
-      {showSuggestions && (query.length >= 2) && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg overflow-hidden">
+      {showSuggestions && query.length >= 2 && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-xl overflow-hidden">
           {searching ? (
             <div className="p-3 text-sm text-muted-foreground text-center">Searching...</div>
           ) : suggestions.length === 0 ? (
-            <div className="p-3 text-sm text-muted-foreground text-center">
-              No players found with that IGN. Make sure they are registered in the system.
+            <div className="p-3 text-sm text-muted-foreground text-center flex items-center justify-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              No players found — they must be registered in the system.
             </div>
           ) : (
-            <div className="max-h-48 overflow-y-auto">
+            <div className="max-h-52 overflow-y-auto">
               {suggestions.map((player) => (
                 <button
                   key={player.id}
                   type="button"
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 flex items-center justify-between transition-colors"
+                  className="w-full px-3 py-2.5 text-left text-sm hover:bg-muted/50 flex items-center justify-between transition-colors border-b border-border/50 last:border-0"
                   onClick={() => handleSelect(player)}
                 >
-                  <div className="flex items-center gap-2">
-                    <img
-                      src={`https://mc-heads.net/avatar/${player.minecraftUsername}/20`}
-                      className="w-5 h-5 rounded"
-                      alt=""
-                    />
-                    <span className="font-medium">{player.minecraftUsername}</span>
+                  <div className="flex items-center gap-2.5">
+                    <img src={`https://mc-heads.net/avatar/${player.minecraftUsername}/24`} className="w-6 h-6 rounded" alt="" />
+                    <div>
+                      <span className="font-semibold">{player.minecraftUsername}</span>
+                    </div>
                   </div>
-                  <span className="text-xs text-muted-foreground">{player.tier} · {player.elo} ELO</span>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Badge variant="outline" className="text-xs font-mono">{player.tier}</Badge>
+                    <span>{player.elo} ELO</span>
+                  </div>
                 </button>
               ))}
             </div>
@@ -122,6 +114,13 @@ function PlayerSearchInput({ value, onChange }: { value: string; onChange: (v: s
     </div>
   );
 }
+
+const STEPS = [
+  { icon: Swords, label: "Play Match" },
+  { icon: Image, label: "Take Screenshot / Record" },
+  { icon: Video, label: "Upload Evidence" },
+  { icon: Trophy, label: "Submit & Wait for Review" },
+];
 
 export default function SubmitMatch() {
   const { user, isAuthenticated } = useAuth();
@@ -145,15 +144,17 @@ export default function SubmitMatch() {
     },
   });
 
+  const result = form.watch("result");
+
   const onSubmit = (values: z.infer<typeof submissionSchema>) => {
     submitMutation.mutate({ data: values }, {
       onSuccess: () => {
-        toast.success("Match submitted successfully! Waiting for admin approval.");
+        toast.success("Match submitted! An admin will review your evidence soon.");
         form.reset();
         setLocation("/player/" + user?.id);
       },
       onError: (error) => {
-        toast.error(error.message || "Failed to submit match");
+        toast.error((error as any)?.message || "Failed to submit match");
       }
     });
   };
@@ -167,39 +168,94 @@ export default function SubmitMatch() {
             Submit Match Result
           </h1>
           <p className="text-muted-foreground">
-            Report a ranked match result. All submissions are reviewed by moderators.
-            False reports may result in a ban.
+            Report your ranked match result. Evidence is mandatory — admins will verify before approving.
           </p>
         </div>
 
-        <div className="glass-card rounded-2xl p-6 md:p-8 border-primary/20">
-          <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-200 rounded-lg p-4 mb-6 flex gap-3 text-sm">
-            <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold mb-1">Evidence strongly recommended</p>
-              <p className="text-yellow-200/80">
-                While not strictly required, providing a screenshot or video link of the match result 
-                significantly speeds up the approval process and protects you from counter-claims.
-              </p>
+        {/* Process Steps */}
+        <div className="grid grid-cols-4 gap-2 mb-8">
+          {STEPS.map((step, i) => (
+            <div key={i} className="flex flex-col items-center text-center gap-1.5">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
+                i === 2 ? "border-primary bg-primary/20 text-primary" : "border-border bg-muted/20 text-muted-foreground"
+              }`}>
+                <step.icon className="w-4 h-4" />
+              </div>
+              <span className="text-xs text-muted-foreground leading-tight">{step.label}</span>
+              {i < STEPS.length - 1 && (
+                <div className="hidden" />
+              )}
             </div>
-          </div>
+          ))}
+        </div>
 
+        {/* Mandatory Evidence Notice */}
+        <div className="bg-red-500/10 border border-red-500/30 text-red-200 rounded-xl p-4 mb-6 flex gap-3 text-sm">
+          <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5 text-red-400" />
+          <div>
+            <p className="font-bold mb-1 text-red-300">Evidence is REQUIRED</p>
+            <ul className="text-red-200/80 space-y-0.5 list-disc list-inside">
+              <li>Upload your screenshot to <a href="https://imgur.com" target="_blank" rel="noreferrer" className="underline hover:text-red-200">Imgur</a> or <a href="https://prnt.sc" target="_blank" rel="noreferrer" className="underline hover:text-red-200">LightShot</a></li>
+              <li>Or share a video clip from YouTube, Medal, or any platform</li>
+              <li>Submissions without valid evidence will be rejected</li>
+              <li>False reports result in a permanent ban</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="glass-card rounded-2xl p-6 md:p-8 border-primary/20">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              {/* Match Result selector — big visual buttons */}
+              <FormField
+                control={form.control}
+                name="result"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base font-semibold">Match Outcome</FormLabel>
+                    <div className="grid grid-cols-2 gap-3 mt-1">
+                      <button
+                        type="button"
+                        onClick={() => field.onChange("win")}
+                        className={`py-4 rounded-xl border-2 font-bold text-lg transition-all ${
+                          field.value === "win"
+                            ? "border-green-400 bg-green-500/15 text-green-400"
+                            : "border-border bg-muted/10 text-muted-foreground hover:border-green-400/50"
+                        }`}
+                      >
+                        I Won
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => field.onChange("loss")}
+                        className={`py-4 rounded-xl border-2 font-bold text-lg transition-all ${
+                          field.value === "loss"
+                            ? "border-red-400 bg-red-500/15 text-red-400"
+                            : "border-border bg-muted/10 text-muted-foreground hover:border-red-400/50"
+                        }`}
+                      >
+                        I Lost
+                      </button>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <FormField
                   control={form.control}
                   name="opponentUsername"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Opponent Minecraft IGN</FormLabel>
+                      <FormLabel>
+                        {result === "win" ? "Opponent (who you beat)" : "Opponent (who beat you)"}
+                      </FormLabel>
                       <FormControl>
-                        <PlayerSearchInput
-                          value={field.value}
-                          onChange={field.onChange}
-                        />
+                        <PlayerSearchInput value={field.value} onChange={field.onChange} />
                       </FormControl>
-                      <FormDescription className="text-xs">Search for your opponent by their Minecraft IGN</FormDescription>
+                      <FormDescription className="text-xs">Search by Minecraft IGN</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -231,43 +287,40 @@ export default function SubmitMatch() {
 
               <FormField
                 control={form.control}
-                name="result"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Match Result</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="bg-background/50 border-border/50">
-                          <SelectValue placeholder="Select result" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="win" className="text-green-400 font-bold">I Won</SelectItem>
-                        <SelectItem value="loss" className="text-red-400 font-bold">I Lost</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
                 name="evidence"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Evidence Link (Optional)</FormLabel>
+                    <FormLabel className="flex items-center gap-1.5">
+                      <Video className="w-4 h-4 text-primary" />
+                      Evidence Link
+                      <span className="text-red-400 text-xs font-normal ml-1">(Required)</span>
+                    </FormLabel>
                     <FormControl>
-                      <Input placeholder="https://imgur.com/... or https://youtube.com/..." {...field} className="bg-background/50 border-border/50" />
+                      <Input
+                        placeholder="https://imgur.com/... or https://youtube.com/... or https://medal.tv/..."
+                        {...field}
+                        className="bg-background/50 border-border/50"
+                      />
                     </FormControl>
-                    <FormDescription>Link to a screenshot or video proving the result.</FormDescription>
+                    <FormDescription>
+                      Screenshot (Imgur, LightShot) or video clip (YouTube, Medal, Streamable) link. This is how admins verify your result.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <Button type="submit" className="w-full h-12 text-base font-bold" disabled={submitMutation.isPending}>
-                {submitMutation.isPending ? "Submitting..." : "Submit Match"}
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 border border-border text-xs text-muted-foreground">
+                <Clock className="w-4 h-4 shrink-0" />
+                <span>Submissions are usually reviewed within 24 hours. You'll see the result on your profile.</span>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full h-12 text-base font-bold"
+                disabled={submitMutation.isPending}
+              >
+                {submitMutation.isPending ? "Submitting..." : "Submit Match for Review"}
               </Button>
             </form>
           </Form>

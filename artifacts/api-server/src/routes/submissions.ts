@@ -17,6 +17,11 @@ router.post("/submissions", requireAuth, async (req: Request, res: Response): Pr
 
   const { opponentUsername, gamemode, result, evidence } = parsed.data;
 
+  if (!evidence) {
+    res.status(400).json({ error: "evidence_required", message: "A screenshot or video link is required to submit a match." });
+    return;
+  }
+
   const opponent = await Player.findOne({ minecraftUsername: { $regex: `^${opponentUsername}$`, $options: "i" } });
   if (!opponent) {
     res.status(404).json({ error: "player_not_found", message: `Player "${opponentUsername}" not found in the system. Make sure you enter their exact Minecraft IGN.` });
@@ -30,7 +35,7 @@ router.post("/submissions", requireAuth, async (req: Request, res: Response): Pr
     gamemode,
     result,
     status: "pending",
-    evidence: evidence ?? null,
+    evidence,
   });
 
   res.status(201).json({ ...submission.toJSON(), id: submission._id.toString() });

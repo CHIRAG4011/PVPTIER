@@ -387,7 +387,7 @@ export const CreateSubmissionBody = zod.object({
   opponentUsername: zod.string(),
   gamemode: zod.string(),
   result: zod.enum(["win", "loss"]),
-  evidence: zod.string().optional(),
+  evidence: zod.string().url("Evidence must be a valid URL"),
 });
 
 /**
