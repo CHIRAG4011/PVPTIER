@@ -21,13 +21,20 @@ function tierRank(tier?: string | null): number {
   return (isHigh ? 0 : 5) + num;
 }
 
-function TopGamemodes({ stats }: { stats: { gamemode: string; tier?: string | null }[] }) {
+function TopGamemodes({ stats, fallbackTier }: { stats: { gamemode: string; tier?: string | null }[]; fallbackTier?: string | null }) {
   const ranked = stats
     .filter(s => s.tier)
     .sort((a, b) => tierRank(a.tier) - tierRank(b.tier))
     .slice(0, 4);
 
   if (ranked.length === 0) {
+    if (fallbackTier) {
+      return (
+        <div className="flex items-center justify-center">
+          <TierBadge tier={fallbackTier} size="sm" showGlow={false} />
+        </div>
+      );
+    }
     return <span className="text-xs text-muted-foreground/60">—</span>;
   }
 
@@ -145,14 +152,14 @@ export default function Leaderboard() {
               <div className="pointer-events-none absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-primary/40 rounded-br-xl" />
 
               <div className="overflow-x-auto">
-                <table className="w-full text-sm text-center table-fixed">
+                <table className="w-full text-sm text-center">
                   <colgroup>
                     <col className="w-[72px]" />
-                    <col />
+                    <col className="w-auto" />
                     <col className="w-[100px]" />
                     <col className="w-[130px]" />
                     <col className="w-[80px]" />
-                    <col className="w-[260px]" />
+                    <col className="w-[230px]" />
                   </colgroup>
                   <thead className="text-xs uppercase bg-gradient-to-r from-muted/40 via-primary/5 to-muted/40 text-muted-foreground border-b border-primary/20">
                     <tr>
@@ -207,8 +214,8 @@ export default function Leaderboard() {
                                   <AvatarFallback>{entry.player.minecraftUsername.substring(0, 2).toUpperCase()}</AvatarFallback>
                                 </Avatar>
                               </div>
-                              <div className="flex flex-col min-w-0 text-left">
-                                <span className="font-bold text-base group-hover:text-primary transition-colors leading-tight truncate">{entry.player.minecraftUsername}</span>
+                              <div className="flex flex-col text-left">
+                                <span className="font-bold text-base group-hover:text-primary transition-colors leading-tight whitespace-nowrap">{entry.player.minecraftUsername}</span>
                                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground/70 font-mono">#{String(entry.rank).padStart(4, '0')}</span>
                               </div>
                             </Link>
@@ -234,7 +241,7 @@ export default function Leaderboard() {
                             </span>
                           </td>
                           <td className="px-4 py-4 text-center">
-                            <TopGamemodes stats={(entry.player as any).gamemodeStats ?? []} />
+                            <TopGamemodes stats={(entry.player as any).gamemodeStats ?? []} fallbackTier={(entry.player as any).tier} />
                           </td>
                         </tr>
                       );})
