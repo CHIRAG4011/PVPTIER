@@ -3,6 +3,40 @@ import { apiUrl } from "@/lib/api";
 
 type SiteSettings = Record<string, string>;
 
+function hexToHslTriplet(hex: string): string | null {
+  if (!hex) return null;
+  let h = hex.trim().replace(/^#/, "");
+  if (h.length === 3) h = h.split("").map(c => c + c).join("");
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return null;
+  const r = parseInt(h.slice(0, 2), 16) / 255;
+  const g = parseInt(h.slice(2, 4), 16) / 255;
+  const b = parseInt(h.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  let hh = 0;
+  let s = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: hh = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: hh = (b - r) / d + 2; break;
+      case b: hh = (r - g) / d + 4; break;
+    }
+    hh /= 6;
+  }
+  return `${Math.round(hh * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
+
+function applyThemeColors(settings: SiteSettings) {
+  const root = document.documentElement;
+  const primary = hexToHslTriplet(settings.primary_color);
+  const accent = hexToHslTriplet(settings.accent_color);
+  if (primary) root.style.setProperty("--primary", primary);
+  if (accent) root.style.setProperty("--accent", accent);
+}
+
 const defaultSettings: SiteSettings = {
   site_name: "PVPTIERS",
   site_logo: "",
@@ -27,9 +61,13 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
 
   useEffect(() => {
+    applyThemeColors(settings);
+  }, [settings]);
+
+  useEffect(() => {
     fetch(apiUrl("/api/settings/public"))
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setSettings(data); })
+      .then(data => { if (data) setSettings({ ...defaultSettings, ...data }); })
       .catch(() => {});
   }, []);
 

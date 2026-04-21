@@ -151,9 +151,9 @@ export default function Leaderboard() {
                       <th className="px-6 py-4 font-bold tracking-widest">Rank</th>
                       <th className="px-6 py-4 font-bold tracking-widest">Player</th>
                       <th className="px-6 py-4 font-bold tracking-widest text-right">Score</th>
+                      <th className="px-6 py-4 font-bold tracking-widest text-center">W / L</th>
                       <th className="px-6 py-4 font-bold tracking-widest text-center">Tier</th>
                       <th className="px-6 py-4 font-bold tracking-widest text-center">Top Gamemodes</th>
-                      <th className="px-6 py-4 font-bold tracking-widest text-center">W / L</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/40">
@@ -214,17 +214,17 @@ export default function Leaderboard() {
                             </div>
                           </td>
                           <td className="px-6 py-4 text-center">
-                            <TierBadge tier={entry.tier} />
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <TopGamemodes stats={(entry.player as any).gamemodeStats ?? []} />
-                          </td>
-                          <td className="px-6 py-4 text-center">
                             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/20 border border-border/50">
                               <span className="text-green-400 font-bold font-mono">{entry.wins}<span className="text-[10px] ml-0.5 opacity-70">W</span></span>
                               <span className="text-muted-foreground/40">/</span>
                               <span className="text-red-400 font-bold font-mono">{entry.losses}<span className="text-[10px] ml-0.5 opacity-70">L</span></span>
                             </div>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <TierBadge tier={entry.tier} />
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <TopGamemodes stats={(entry.player as any).gamemodeStats ?? []} />
                           </td>
                         </tr>
                       );})
@@ -284,25 +284,25 @@ function StatTile({ icon, label, value, highlight }: { icon: React.ReactNode; la
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) {
     return (
-      <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-yellow-400/30 to-yellow-600/10 border border-yellow-400/60 flex items-center justify-center shadow-[0_0_18px_rgba(234,179,8,0.45)] animate-pulse-glow">
-        <Crown className="w-5 h-5 text-yellow-400" />
-        <span className="absolute -bottom-1 -right-1 text-[9px] font-mono font-bold bg-yellow-400 text-black rounded px-1">1</span>
+      <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-400/30 to-yellow-600/10 border border-yellow-400/60 flex flex-col items-center justify-center shadow-[0_0_18px_rgba(234,179,8,0.45)] animate-pulse-glow leading-none">
+        <Crown className="w-4 h-4 text-yellow-400" />
+        <span className="text-sm font-mono font-bold text-yellow-300 mt-0.5">1</span>
       </div>
     );
   }
   if (rank === 2) {
     return (
-      <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-gray-200/25 to-gray-400/10 border border-gray-300/50 flex items-center justify-center shadow-[0_0_12px_rgba(229,231,235,0.25)]">
-        <Medal className="w-5 h-5 text-gray-200" />
-        <span className="absolute -bottom-1 -right-1 text-[9px] font-mono font-bold bg-gray-200 text-black rounded px-1">2</span>
+      <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-gray-200/25 to-gray-400/10 border border-gray-300/50 flex flex-col items-center justify-center shadow-[0_0_12px_rgba(229,231,235,0.25)] leading-none">
+        <Medal className="w-4 h-4 text-gray-200" />
+        <span className="text-sm font-mono font-bold text-gray-100 mt-0.5">2</span>
       </div>
     );
   }
   if (rank === 3) {
     return (
-      <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-amber-600/25 to-amber-800/10 border border-amber-600/50 flex items-center justify-center shadow-[0_0_12px_rgba(217,119,6,0.3)]">
-        <Award className="w-5 h-5 text-amber-500" />
-        <span className="absolute -bottom-1 -right-1 text-[9px] font-mono font-bold bg-amber-600 text-black rounded px-1">3</span>
+      <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-amber-600/25 to-amber-800/10 border border-amber-600/50 flex flex-col items-center justify-center shadow-[0_0_12px_rgba(217,119,6,0.3)] leading-none">
+        <Award className="w-4 h-4 text-amber-500" />
+        <span className="text-sm font-mono font-bold text-amber-400 mt-0.5">3</span>
       </div>
     );
   }
