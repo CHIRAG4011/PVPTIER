@@ -307,7 +307,7 @@ function RankBadge({ rank }: { rank: number }) {
     );
   }
   return (
-    <div className="w-11 h-11 rounded-xl bg-muted/30 border border-border/50 flex items-center justify-center font-mono font-bold text-muted-foreground group-hover:border-primary/40 group-hover:text-primary transition-all">
+    <div className="w-12 h-12 rounded-xl bg-muted/40 border border-border/60 flex items-center justify-center font-mono font-bold text-base text-foreground group-hover:border-primary/60 group-hover:text-primary group-hover:shadow-[0_0_10px_-2px_hsl(var(--primary)/0.5)] transition-all">
       {rank}
     </div>
   );
