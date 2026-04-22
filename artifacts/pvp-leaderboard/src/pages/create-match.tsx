@@ -129,10 +129,12 @@ export default function CreateMatch() {
 
   if (!isAuthenticated) { setLocation("/login"); return null; }
 
+  const prefilledOpponent = new URLSearchParams(window.location.search).get("opponent") || "";
+
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      opponentUsername: "",
+      opponentUsername: prefilledOpponent,
       gamemode: "",
       server: "",
       scheduledTime: defaultDateTime(),

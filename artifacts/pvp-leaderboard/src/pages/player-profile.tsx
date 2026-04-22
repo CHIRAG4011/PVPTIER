@@ -127,7 +127,7 @@ export default function PlayerProfile() {
               {isAuthenticated && user?.id !== id && (
                 <div className="flex gap-3 mt-4 justify-center md:justify-start">
                   <Button asChild className="gap-2" size="sm">
-                    <Link href={`/submit?opponent=${encodeURIComponent(player.minecraftUsername)}`}>
+                    <Link href={`/create-match?opponent=${encodeURIComponent(player.minecraftUsername)}`}>
                       <Swords className="w-4 h-4" />
                       Challenge {player.minecraftUsername}
                     </Link>

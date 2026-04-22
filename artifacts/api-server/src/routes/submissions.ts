@@ -129,8 +129,51 @@ router.get("/submissions", requireAdmin, async (req: Request, res: Response): Pr
   });
 });
 
+router.get("/submissions/:id", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id as string)) {
+    res.status(400).json({ error: "invalid_id", message: "Invalid submission ID" });
+    return;
+  }
+  const submission = await Submission.findById(id);
+  if (!submission) {
+    res.status(404).json({ error: "not_found", message: "Submission not found" });
+    return;
+  }
+
+  // Look up player records for richer context (tier, elo, etc.)
+  const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const submitterUserDoc = await User.findById(submission.submitterId);
+  const submitterIGN = submitterUserDoc?.minecraftUsername || submission.submitterUsername;
+  const [submitterPlayer, opponentPlayer] = await Promise.all([
+    Player.findOne({ minecraftUsername: { $regex: `^${escapeRegex(submitterIGN)}$`, $options: "i" } }),
+    Player.findOne({ minecraftUsername: { $regex: `^${escapeRegex(submission.opponentUsername)}$`, $options: "i" } }),
+  ]);
+
+  const fmtPlayer = (p: any) =>
+    p
+      ? {
+          id: p._id.toString(),
+          minecraftUsername: p.minecraftUsername,
+          tier: p.tier,
+          elo: p.elo,
+          wins: p.wins,
+          losses: p.losses,
+          winStreak: p.winStreak,
+        }
+      : null;
+
+  res.json({
+    ...submission.toJSON(),
+    id: submission._id.toString(),
+    submitterPlayer: fmtPlayer(submitterPlayer),
+    opponentPlayer: fmtPlayer(opponentPlayer),
+  });
+});
+
 const ApproveBody = z.object({
   winner: z.enum(["submitter", "opponent"]),
+  notes: z.string().max(2000).optional(),
 });
 
 router.post("/submissions/:id/approve", requireAdmin, async (req: Request, res: Response): Promise<void> => {
@@ -167,6 +210,8 @@ router.post("/submissions/:id/approve", requireAdmin, async (req: Request, res: 
   await Submission.findByIdAndUpdate(id, {
     status: "approved",
     reviewedBy: adminUser.userId,
+    reviewedAt: new Date(),
+    reviewNotes: parsed.data.notes ?? null,
     result: parsed.data.winner === "submitter" ? "win" : "loss",
   });
 
@@ -208,7 +253,14 @@ router.post("/submissions/:id/reject", requireAdmin, async (req: Request, res: R
     return;
   }
 
-  await Submission.findByIdAndUpdate(id, { status: "rejected", reviewedBy: adminUser.userId });
+  const RejectBody = z.object({ notes: z.string().max(2000).optional() });
+  const rejectParsed = RejectBody.safeParse(req.body || {});
+  await Submission.findByIdAndUpdate(id, {
+    status: "rejected",
+    reviewedBy: adminUser.userId,
+    reviewedAt: new Date(),
+    reviewNotes: rejectParsed.success ? rejectParsed.data.notes ?? null : null,
+  });
 
   await AdminLog.create({
     adminId: adminUser.userId,

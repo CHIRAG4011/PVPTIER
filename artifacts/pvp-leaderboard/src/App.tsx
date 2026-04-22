@@ -28,6 +28,7 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminPlayers from "@/pages/admin/players";
 import AdminSubmissions from "@/pages/admin/submissions";
+import AdminSubmissionDetail from "@/pages/admin/submission-detail";
 import AdminTickets from "@/pages/admin/tickets";
 import AdminSeasons from "@/pages/admin/seasons";
 import AdminAnnouncements from "@/pages/admin/announcements";
@@ -71,6 +72,7 @@ function Router() {
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin/players" component={AdminPlayers} />
       <Route path="/admin/submissions" component={AdminSubmissions} />
+      <Route path="/admin/submissions/:id" component={AdminSubmissionDetail} />
       <Route path="/admin/tickets" component={AdminTickets} />
       <Route path="/admin/seasons" component={AdminSeasons} />
       <Route path="/admin/announcements" component={AdminAnnouncements} />

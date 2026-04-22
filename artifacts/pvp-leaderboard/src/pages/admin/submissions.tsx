@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExternalLink, Check, X, ChevronLeft, ChevronRight, Video, Image, AlertCircle, Gavel } from "lucide-react";
+import { ExternalLink, Check, X, ChevronLeft, ChevronRight, Video, Image, AlertCircle, Gavel, Eye } from "lucide-react";
+import { Link } from "wouter";
 import { toast } from "sonner";
 import { GamemodeIcon } from "@/components/ui/gamemode-icon";
 import { apiUrl } from "@/lib/api";
@@ -184,14 +185,19 @@ export default function AdminSubmissions() {
                     <div className="flex flex-col md:items-end gap-3">
                       <EvidenceLink url={s.evidence} />
 
-                      {s.status === "pending" && (
-                        <div className="flex gap-2">
+                      {s.status === "pending" ? (
+                        <div className="flex flex-wrap gap-2">
+                          <Button size="sm" variant="outline" className="gap-1" asChild>
+                            <Link href={`/admin/submissions/${s.id}`}>
+                              <Eye className="w-3.5 h-3.5" /> Open & Review
+                            </Link>
+                          </Button>
                           <Button
                             size="sm"
                             className="bg-green-600 hover:bg-green-700 text-white gap-1"
                             onClick={() => { setApproving(s); setChosenWinner(""); }}
                           >
-                            <Gavel className="w-3.5 h-3.5" /> Decide & Approve
+                            <Gavel className="w-3.5 h-3.5" /> Quick Approve
                           </Button>
                           <Button
                             size="sm"
@@ -202,6 +208,12 @@ export default function AdminSubmissions() {
                             <X className="w-3.5 h-3.5" /> Reject
                           </Button>
                         </div>
+                      ) : (
+                        <Button size="sm" variant="outline" className="gap-1" asChild>
+                          <Link href={`/admin/submissions/${s.id}`}>
+                            <Eye className="w-3.5 h-3.5" /> View Details
+                          </Link>
+                        </Button>
                       )}
                     </div>
                   </div>

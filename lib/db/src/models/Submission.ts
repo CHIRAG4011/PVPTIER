@@ -9,6 +9,8 @@ export interface ISubmission extends Document {
   status: "pending" | "approved" | "rejected";
   evidence?: string | null;
   reviewedBy?: string | null;
+  reviewNotes?: string | null;
+  reviewedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,6 +25,8 @@ const SubmissionSchema = new Schema<ISubmission>(
     status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
     evidence: { type: String, default: null },
     reviewedBy: { type: String, default: null },
+    reviewNotes: { type: String, default: null },
+    reviewedAt: { type: Date, default: null },
   },
   {
     timestamps: true,
