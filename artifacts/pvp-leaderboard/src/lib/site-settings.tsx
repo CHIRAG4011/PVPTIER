@@ -57,8 +57,27 @@ const defaultSettings: SiteSettings = {
 
 const SiteSettingsContext = createContext<SiteSettings>(defaultSettings);
 
+const CACHE_KEY = "pvp_site_settings_v1";
+
+function loadCachedSettings(): SiteSettings {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return defaultSettings;
+    const parsed = JSON.parse(raw) as SiteSettings;
+    return { ...defaultSettings, ...parsed };
+  } catch {
+    return defaultSettings;
+  }
+}
+
+// Apply theme colors as early as possible (before React mounts) using cached values
+// to avoid a flash of the default theme on reload.
+if (typeof document !== "undefined") {
+  applyThemeColors(loadCachedSettings());
+}
+
 export function SiteSettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
+  const [settings, setSettings] = useState<SiteSettings>(loadCachedSettings);
 
   useEffect(() => {
     applyThemeColors(settings);
@@ -67,7 +86,17 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetch(apiUrl("/api/settings/public"))
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setSettings({ ...defaultSettings, ...data }); })
+      .then(data => {
+        if (data) {
+          const merged = { ...defaultSettings, ...data };
+          setSettings(merged);
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+          } catch {
+            // Ignore quota errors
+          }
+        }
+      })
       .catch(() => {});
   }, []);
 
