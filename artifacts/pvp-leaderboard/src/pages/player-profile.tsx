@@ -2,6 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { useGetPlayer, useGetPlayerStats, useGetPlayerMatches } from "@workspace/api-client-react";
 import { useParams, Link } from "wouter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useSkinBody } from "@/lib/skin";
 import { TierBadge } from "@/components/ui/tier-badge";
 import { GamemodeIcon } from "@/components/ui/gamemode-icon";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +17,7 @@ export default function PlayerProfile() {
   const { user, isAuthenticated } = useAuth();
 
   const { data: player, isLoading: playerLoading } = useGetPlayer(id as any);
+  const customSkinBody = useSkinBody((player as { customSkinUrl?: string | null } | undefined)?.customSkinUrl, 8);
   const { data: stats, isLoading: statsLoading } = useGetPlayerStats(id as any);
   const { data: matches, isLoading: matchesLoading } = useGetPlayerMatches(id as any, { limit: 10 } as any);
 
@@ -62,9 +64,13 @@ export default function PlayerProfile() {
             <div className="relative group">
               <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <Avatar className="w-32 h-32 border-4 border-background shadow-xl rounded-xl relative z-10 bg-muted">
-                <AvatarImage 
-                  src={`https://mc-heads.net/body/${player.minecraftUsername}/128`} 
-                  className="object-cover object-top"
+                <AvatarImage
+                  src={
+                    (player as any).customSkinUrl
+                      ? (customSkinBody ?? undefined)
+                      : (player as any).avatarUrl || `https://mc-heads.net/body/${player.minecraftUsername}/128`
+                  }
+                  className="object-contain object-top"
                   style={{ imageRendering: 'pixelated' }}
                 />
                 <AvatarFallback className="text-4xl font-bold rounded-xl">{player.minecraftUsername.substring(0, 2).toUpperCase()}</AvatarFallback>

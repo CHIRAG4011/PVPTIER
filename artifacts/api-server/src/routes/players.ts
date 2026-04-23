@@ -16,7 +16,7 @@ function calcWinRate(wins: number, losses: number): number {
   return Math.round((wins / total) * 10000) / 100;
 }
 
-function formatPlayer(p: any) {
+function formatPlayer(p: any, u?: any) {
   return {
     id: p._id.toString(),
     userId: p.userId,
@@ -31,7 +31,34 @@ function formatPlayer(p: any) {
     region: p.region,
     badges: p.badges ?? [],
     createdAt: p.createdAt,
+    customSkinUrl: u?.customSkinUrl ?? null,
+    avatarUrl: u?.avatarUrl ?? null,
   };
+}
+
+async function attachUsers(players: any[]): Promise<Map<string, any>> {
+  const ids = players.map(p => p.userId).filter(Boolean);
+  const names = players.map(p => p.minecraftUsername).filter(Boolean);
+  const orClauses: any[] = [];
+  if (ids.length) orClauses.push({ _id: { $in: ids } });
+  if (names.length) {
+    const escaped = names.map(n => String(n).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    orClauses.push({ minecraftUsername: { $in: escaped.map(n => new RegExp(`^${n}$`, "i")) } });
+  }
+  const map = new Map<string, any>();
+  if (!orClauses.length) return map;
+  const users = await User.find({ $or: orClauses }).select("_id minecraftUsername customSkinUrl avatarUrl");
+  for (const u of users) {
+    map.set(u._id.toString(), u);
+    if (u.minecraftUsername) map.set(`name:${u.minecraftUsername.toLowerCase()}`, u);
+  }
+  return map;
+}
+
+function userForPlayer(p: any, userMap: Map<string, any>): any | undefined {
+  if (p.userId && userMap.has(p.userId)) return userMap.get(p.userId);
+  if (p.minecraftUsername) return userMap.get(`name:${p.minecraftUsername.toLowerCase()}`);
+  return undefined;
 }
 
 router.get("/players/search", async (req: Request, res: Response): Promise<void> => {
@@ -43,7 +70,8 @@ router.get("/players/search", async (req: Request, res: Response): Promise<void>
 
   const { Player } = await import("@workspace/db");
   const players = await Player.find({ minecraftUsername: { $regex: q, $options: "i" } }).limit(10);
-  res.json({ players: players.map(formatPlayer) });
+  const userMap = await attachUsers(players);
+  res.json({ players: players.map(p => formatPlayer(p, userForPlayer(p, userMap))) });
 });
 
 router.get("/players", async (req: Request, res: Response): Promise<void> => {
@@ -65,8 +93,9 @@ router.get("/players", async (req: Request, res: Response): Promise<void> => {
     Player.countDocuments(filter),
   ]);
 
+  const userMap = await attachUsers(players);
   res.json({
-    players: players.map(formatPlayer),
+    players: players.map(p => formatPlayer(p, userForPlayer(p, userMap))),
     total,
     page,
     totalPages: Math.ceil(total / limit),
@@ -128,8 +157,9 @@ router.get("/players/:id", async (req: Request, res: Response): Promise<void> =>
   const { Match } = await import("@workspace/db");
   const recentMatches = await Match.find({ winnerId: playerIdStr }).sort({ playedAt: -1 }).limit(10);
 
+  const detailUserMap = await attachUsers([player]);
   res.json({
-    ...formatPlayer(player),
+    ...formatPlayer(player, userForPlayer(player, detailUserMap)),
     gamemodeStats: (player.gamemodeStats ?? []).map((gs: any) => ({
       gamemode: gs.gamemode,
       wins: gs.wins,

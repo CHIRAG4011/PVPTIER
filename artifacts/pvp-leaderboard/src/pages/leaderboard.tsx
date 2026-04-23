@@ -8,11 +8,23 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useSkinFace, resolveUserAvatarSrc } from "@/lib/skin";
 import { Trophy, Search, ChevronLeft, ChevronRight, Crown, Medal, Award, Zap, TrendingUp, Users, Swords } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const GAMEMODES = ["sword", "axe", "uhc", "vanilla", "smp", "diapot", "nethpot", "elytra"];
 const TIERS = ["HT1", "HT2", "HT3", "HT4", "HT5", "LT1", "LT2", "LT3", "LT4", "LT5"];
+
+function PlayerAvatar({ player, className }: { player: { minecraftUsername: string; customSkinUrl?: string | null; avatarUrl?: string | null }; className?: string }) {
+  const face = useSkinFace(player.customSkinUrl, 128);
+  const src = resolveUserAvatarSrc(player as any, face);
+  return (
+    <Avatar className={className}>
+      <AvatarImage src={src} style={player.customSkinUrl ? { imageRendering: "pixelated" } : undefined} />
+      <AvatarFallback>{player.minecraftUsername.substring(0, 2).toUpperCase()}</AvatarFallback>
+    </Avatar>
+  );
+}
 
 function tierRank(tier?: string | null): number {
   if (!tier) return 999;
@@ -213,10 +225,10 @@ export default function Leaderboard() {
                           {/* Player */}
                           <Link href={`/player/${entry.player.id}`} className="flex items-center gap-3 min-w-0">
                             <div className={`relative shrink-0 ${isTop ? "holo-ring rounded-full" : ""}`}>
-                              <Avatar className={`h-10 w-10 border transition-all ${isTop ? "border-primary/60 shadow-[0_0_12px_-2px_hsl(var(--primary)/0.6)]" : "border-border group-hover:border-primary"}`}>
-                                <AvatarImage src={`https://mc-heads.net/avatar/${entry.player.minecraftUsername}/64`} />
-                                <AvatarFallback>{entry.player.minecraftUsername.substring(0, 2).toUpperCase()}</AvatarFallback>
-                              </Avatar>
+                              <PlayerAvatar
+                                player={entry.player as any}
+                                className={`h-10 w-10 border transition-all ${isTop ? "border-primary/60 shadow-[0_0_12px_-2px_hsl(var(--primary)/0.6)]" : "border-border group-hover:border-primary"}`}
+                              />
                             </div>
                             <div className="flex flex-col min-w-0">
                               <span className="font-bold text-base group-hover:text-primary transition-colors leading-tight truncate">{entry.player.minecraftUsername}</span>
