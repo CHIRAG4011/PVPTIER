@@ -1,12 +1,13 @@
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/lib/auth";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { User, Lock, Image, Save, ArrowLeft } from "lucide-react";
+import { User, Lock, Image, Save, ArrowLeft, Gamepad2 } from "lucide-react";
 import { Link } from "wouter";
 import { apiUrl } from "@/lib/api";
 
@@ -21,9 +22,12 @@ function apiRequest(method: string, path: string, body: unknown) {
 
 export default function Settings() {
   const { user, setToken, logout } = useAuth();
+  const queryClient = useQueryClient();
+  const refreshMe = () => queryClient.invalidateQueries({ queryKey: ["me"] });
   const [username, setUsername] = useState(user?.username || "");
   const [bio, setBio] = useState((user as { bio?: string })?.bio || "");
   const [avatarUrl, setAvatarUrl] = useState((user as { avatarUrl?: string })?.avatarUrl || "");
+  const [minecraftUsername, setMinecraftUsername] = useState(user?.minecraftUsername || "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -48,6 +52,7 @@ export default function Settings() {
     if (data.success) {
       toast.success("Username updated!");
       if (data.token) setToken(data.token);
+      refreshMe();
     } else {
       toast.error(data.message || "Failed to update username");
     }
@@ -57,16 +62,38 @@ export default function Settings() {
     setSaving("bio");
     const data = await apiRequest("PATCH", "/users/me/bio", { bio });
     setSaving(null);
-    if (data.success) toast.success("Bio updated!");
-    else toast.error(data.message || "Failed to update bio");
+    if (data.success) {
+      toast.success("Bio updated!");
+      refreshMe();
+    } else {
+      toast.error(data.message || "Failed to update bio");
+    }
   };
 
   const handleAvatarChange = async () => {
     setSaving("avatar");
     const data = await apiRequest("PATCH", "/users/me/avatar", { avatarUrl });
     setSaving(null);
-    if (data.success) toast.success("Avatar updated!");
-    else toast.error(data.message || "Invalid URL");
+    if (data.success) {
+      toast.success("Profile picture updated!");
+      refreshMe();
+    } else {
+      toast.error(data.message || "Invalid URL");
+    }
+  };
+
+  const handleSkinChange = async () => {
+    setSaving("skin");
+    const data = await apiRequest("PATCH", "/users/me/minecraft", {
+      minecraftUsername: minecraftUsername.trim() || null,
+    });
+    setSaving(null);
+    if (data.success) {
+      toast.success(minecraftUsername.trim() ? "Minecraft skin saved!" : "Skin removed.");
+      refreshMe();
+    } else {
+      toast.error(data.message || "Failed to save skin");
+    }
   };
 
   const handlePasswordChange = async () => {
@@ -166,6 +193,53 @@ export default function Settings() {
                   <AvatarFallback>?</AvatarFallback>
                 </Avatar>
                 <span className="text-sm text-muted-foreground">Preview</span>
+              </div>
+            )}
+          </div>
+
+          <div className="glass-card rounded-xl border-border p-6 space-y-5">
+            <div className="flex items-center gap-3 pb-4 border-b border-border">
+              <Gamepad2 className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-bold">Minecraft Skin</h2>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Minecraft Username</label>
+              <div className="flex gap-2">
+                <Input
+                  value={minecraftUsername}
+                  onChange={e => setMinecraftUsername(e.target.value)}
+                  placeholder="e.g. Notch"
+                  maxLength={16}
+                  className="bg-background/50 border-border/50"
+                />
+                <Button onClick={handleSkinChange} disabled={saving === "skin"} size="sm">
+                  {saving === "skin" ? "..." : <Save className="w-4 h-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Used to show your Minecraft skin on your profile. Also acts as a fallback profile picture when no avatar URL is set.
+              </p>
+            </div>
+
+            {minecraftUsername.trim().length >= 3 && (
+              <div className="flex items-center gap-4 p-4 rounded-lg bg-background/40 border border-border/50">
+                <img
+                  src={`https://mc-heads.net/body/${minecraftUsername.trim()}/100`}
+                  alt="Skin body"
+                  className="h-28 w-auto"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                />
+                <img
+                  src={`https://mc-heads.net/head/${minecraftUsername.trim()}/100`}
+                  alt="Skin head"
+                  className="h-20 w-20 rounded-md"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                />
+                <div className="text-sm">
+                  <p className="font-bold">{minecraftUsername.trim()}</p>
+                  <p className="text-muted-foreground text-xs">Skin preview</p>
+                </div>
               </div>
             )}
           </div>

@@ -55,6 +55,25 @@ router.patch("/users/me/avatar", requireAuth, async (req: Request, res: Response
   res.json({ success: true, message: "Avatar updated" });
 });
 
+router.patch("/users/me/minecraft", requireAuth, async (req: Request, res: Response): Promise<void> => {
+  const authUser = (req as Request & { user?: JwtPayload }).user!;
+  const { minecraftUsername } = req.body;
+
+  if (minecraftUsername !== null && minecraftUsername !== "") {
+    if (typeof minecraftUsername !== "string" || !/^[a-zA-Z0-9_]{3,16}$/.test(minecraftUsername.trim())) {
+      res.status(400).json({
+        error: "validation_error",
+        message: "Minecraft username must be 3-16 characters (letters, numbers, underscores).",
+      });
+      return;
+    }
+  }
+
+  const value = minecraftUsername ? minecraftUsername.trim() : null;
+  await User.findByIdAndUpdate(authUser.userId, { minecraftUsername: value });
+  res.json({ success: true, message: "Minecraft skin updated", minecraftUsername: value });
+});
+
 router.patch("/users/me/bio", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const authUser = (req as Request & { user?: JwtPayload }).user!;
   const { bio } = req.body;
