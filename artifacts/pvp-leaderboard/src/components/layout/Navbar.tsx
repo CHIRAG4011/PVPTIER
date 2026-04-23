@@ -8,12 +8,15 @@ import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSiteSettings } from "@/lib/site-settings";
+import { useSkinFace, resolveUserAvatarSrc } from "@/lib/skin";
 
 export function Navbar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const settings = useSiteSettings();
+  const customSkinFace = useSkinFace((user as { customSkinUrl?: string | null } | null)?.customSkinUrl, 128);
+  const userAvatarSrc = resolveUserAvatarSrc(user as Parameters<typeof resolveUserAvatarSrc>[0], customSkinFace);
 
   const serverIp = settings.server_ip || "play.pvp-leaderboard.net";
   const discordUrl = settings.discord_url || "#";
@@ -113,7 +116,7 @@ export function Navbar() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8 border border-border">
-                    <AvatarImage src={`https://mc-heads.net/avatar/${user.minecraftUsername || user.username}/64`} alt={user.username} />
+                    <AvatarImage src={userAvatarSrc} alt={user.username} />
                     <AvatarFallback>{user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                 </Button>
@@ -234,7 +237,7 @@ export function Navbar() {
             <div className="flex flex-col gap-2 mt-2">
               <div className="flex items-center gap-3 mb-2 px-2">
                 <Avatar className="h-10 w-10 border border-border">
-                  <AvatarImage src={`https://mc-heads.net/avatar/${user.minecraftUsername || user.username}/64`} />
+                  <AvatarImage src={userAvatarSrc} />
                   <AvatarFallback>{user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>

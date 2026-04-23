@@ -12,6 +12,7 @@ export interface IUser extends Document {
   discordUsername?: string | null;
   discordAvatar?: string | null;
   avatarUrl?: string | null;
+  customSkinUrl?: string | null;
   bio?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -30,6 +31,7 @@ const UserSchema = new Schema<IUser>(
     discordUsername: { type: String, default: null },
     discordAvatar: { type: String, default: null },
     avatarUrl: { type: String, default: null },
+    customSkinUrl: { type: String, default: null },
     bio: { type: String, default: null },
   },
   {

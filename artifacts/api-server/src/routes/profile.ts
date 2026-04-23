@@ -55,6 +55,60 @@ router.patch("/users/me/avatar", requireAuth, async (req: Request, res: Response
   res.json({ success: true, message: "Avatar updated" });
 });
 
+router.post("/users/me/skin-upload", requireAuth, async (req: Request, res: Response): Promise<void> => {
+  const authUser = (req as Request & { user?: JwtPayload }).user!;
+  const { skinDataUrl } = req.body || {};
+
+  if (typeof skinDataUrl !== "string" || !skinDataUrl.startsWith("data:image/png;base64,")) {
+    res.status(400).json({ error: "validation_error", message: "Skin must be a PNG file." });
+    return;
+  }
+
+  const base64 = skinDataUrl.slice("data:image/png;base64,".length);
+  let buffer: Buffer;
+  try {
+    buffer = Buffer.from(base64, "base64");
+  } catch {
+    res.status(400).json({ error: "validation_error", message: "Could not decode skin file." });
+    return;
+  }
+
+  // Reject anything larger than ~200 KB (Minecraft skins are usually 3-5 KB).
+  if (buffer.length > 200 * 1024) {
+    res.status(400).json({ error: "too_large", message: "Skin file is too large (max 200 KB)." });
+    return;
+  }
+
+  // Verify PNG magic bytes (0x89 0x50 0x4E 0x47).
+  if (
+    buffer.length < 24 ||
+    buffer[0] !== 0x89 || buffer[1] !== 0x50 || buffer[2] !== 0x4e || buffer[3] !== 0x47
+  ) {
+    res.status(400).json({ error: "validation_error", message: "File is not a valid PNG." });
+    return;
+  }
+
+  // Verify dimensions (Minecraft skins are 64x64 or 64x32). PNG IHDR is at bytes 16-23.
+  const width = buffer.readUInt32BE(16);
+  const height = buffer.readUInt32BE(20);
+  if (width !== 64 || (height !== 64 && height !== 32)) {
+    res.status(400).json({
+      error: "validation_error",
+      message: `Skin must be 64x64 or 64x32 pixels (got ${width}x${height}).`,
+    });
+    return;
+  }
+
+  await User.findByIdAndUpdate(authUser.userId, { customSkinUrl: skinDataUrl });
+  res.json({ success: true, message: "Custom skin uploaded" });
+});
+
+router.delete("/users/me/skin-upload", requireAuth, async (req: Request, res: Response): Promise<void> => {
+  const authUser = (req as Request & { user?: JwtPayload }).user!;
+  await User.findByIdAndUpdate(authUser.userId, { customSkinUrl: null });
+  res.json({ success: true, message: "Custom skin removed" });
+});
+
 router.patch("/users/me/minecraft", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const authUser = (req as Request & { user?: JwtPayload }).user!;
   const { minecraftUsername } = req.body;

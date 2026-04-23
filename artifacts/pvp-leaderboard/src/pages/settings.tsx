@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { User, Lock, Image, Save, ArrowLeft, Gamepad2 } from "lucide-react";
+import { User, Lock, Image, Save, ArrowLeft, Gamepad2, Upload, Trash2 } from "lucide-react";
+import { useRef } from "react";
 import { Link } from "wouter";
 import { apiUrl } from "@/lib/api";
 
@@ -28,6 +29,8 @@ export default function Settings() {
   const [bio, setBio] = useState((user as { bio?: string })?.bio || "");
   const [avatarUrl, setAvatarUrl] = useState((user as { avatarUrl?: string })?.avatarUrl || "");
   const [minecraftUsername, setMinecraftUsername] = useState(user?.minecraftUsername || "");
+  const [customSkinUrl, setCustomSkinUrl] = useState((user as { customSkinUrl?: string })?.customSkinUrl || "");
+  const skinFileInputRef = useRef<HTMLInputElement>(null);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -79,6 +82,51 @@ export default function Settings() {
       refreshMe();
     } else {
       toast.error(data.message || "Invalid URL");
+    }
+  };
+
+  const handleSkinUpload = async (file: File) => {
+    if (file.size > 200 * 1024) {
+      toast.error("Skin file is too large (max 200 KB).");
+      return;
+    }
+    if (file.type !== "image/png") {
+      toast.error("Skin must be a PNG file.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      setSaving("skin-upload");
+      const data = await apiRequest("POST", "/users/me/skin-upload", { skinDataUrl: dataUrl });
+      setSaving(null);
+      if (data.success) {
+        setCustomSkinUrl(dataUrl);
+        toast.success("Custom skin uploaded!");
+        refreshMe();
+      } else {
+        toast.error(data.message || "Failed to upload skin");
+      }
+    };
+    reader.onerror = () => toast.error("Could not read the file");
+    reader.readAsDataURL(file);
+  };
+
+  const handleSkinRemove = async () => {
+    if (!confirm("Remove your uploaded skin?")) return;
+    setSaving("skin-upload");
+    const token = localStorage.getItem("pvp_token");
+    const data = await fetch(apiUrl("/api/users/me/skin-upload"), {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(r => r.json());
+    setSaving(null);
+    if (data.success) {
+      setCustomSkinUrl("");
+      toast.success("Custom skin removed.");
+      refreshMe();
+    } else {
+      toast.error(data.message || "Failed to remove skin");
     }
   };
 
@@ -222,7 +270,7 @@ export default function Settings() {
               </p>
             </div>
 
-            {minecraftUsername.trim().length >= 3 && (
+            {minecraftUsername.trim().length >= 3 && !customSkinUrl && (
               <div className="flex items-center gap-4 p-4 rounded-lg bg-background/40 border border-border/50">
                 <img
                   src={`https://mc-heads.net/body/${minecraftUsername.trim()}/100`}
@@ -242,6 +290,86 @@ export default function Settings() {
                 </div>
               </div>
             )}
+
+            {/* Upload skin (for cracked / non-premium accounts) */}
+            <div className="space-y-2 pt-2 border-t border-border/50">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Upload className="w-4 h-4" /> Upload Skin (.png)
+              </label>
+              <p className="text-xs text-muted-foreground">
+                For cracked accounts or custom skins not on Mojang. Upload a 64×64 (or 64×32) PNG, max 200 KB. Overrides the username preview above.
+              </p>
+              <input
+                ref={skinFileInputRef}
+                type="file"
+                accept="image/png"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleSkinUpload(file);
+                  if (skinFileInputRef.current) skinFileInputRef.current.value = "";
+                }}
+              />
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => skinFileInputRef.current?.click()}
+                  disabled={saving === "skin-upload"}
+                  className="gap-1.5"
+                >
+                  <Upload className="w-4 h-4" />
+                  {saving === "skin-upload"
+                    ? "Uploading..."
+                    : customSkinUrl
+                      ? "Replace skin"
+                      : "Choose skin file"}
+                </Button>
+                {customSkinUrl && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSkinRemove}
+                    disabled={saving === "skin-upload"}
+                    className="gap-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                  >
+                    <Trash2 className="w-4 h-4" /> Remove
+                  </Button>
+                )}
+              </div>
+
+              {customSkinUrl && (
+                <div className="flex items-center gap-4 p-4 rounded-lg bg-background/40 border border-primary/40 mt-2">
+                  <div
+                    className="w-20 h-20 rounded-md border border-border bg-black/40"
+                    style={{
+                      backgroundImage: `url(${customSkinUrl})`,
+                      backgroundSize: "512px 512px",
+                      backgroundPosition: "-64px -64px",
+                      imageRendering: "pixelated",
+                    }}
+                    title="Face crop"
+                  />
+                  <img
+                    src={customSkinUrl}
+                    alt="Uploaded skin (atlas)"
+                    className="h-20 w-20 rounded-md border border-border bg-black/40"
+                    style={{ imageRendering: "pixelated" }}
+                  />
+                  <div className="text-sm">
+                    <p className="font-bold flex items-center gap-1.5">
+                      <span className="inline-block w-2 h-2 rounded-full bg-green-400" />
+                      Custom skin active
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      Used wherever your skin is shown.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="glass-card rounded-xl border-border p-6 space-y-5">
