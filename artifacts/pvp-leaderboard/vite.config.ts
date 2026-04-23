@@ -44,6 +44,14 @@ export default defineConfig({
     port,
     host: "0.0.0.0",
     allowedHosts: true,
+    headers:
+      process.env.NODE_ENV !== "production"
+        ? {
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+          }
+        : {},
     proxy: {
       "/api": {
         target: `http://localhost:${process.env.API_PORT ?? "8080"}`,
