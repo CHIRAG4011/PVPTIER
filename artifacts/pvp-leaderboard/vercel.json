@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "buildCommand": "cd ../.. && pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/pvp-leaderboard run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/((?!api).*)", "destination": "/index.html" }
+  ]
+}
