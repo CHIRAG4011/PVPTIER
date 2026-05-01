@@ -1,40 +1,8 @@
 import { Router, type IRouter } from "express";
-import healthRouter from "./health.js";
-import authRouter from "./auth.js";
-import discordRouter from "./discord.js";
-import playersRouter from "./players.js";
-import leaderboardRouter from "./leaderboard.js";
-import submissionsRouter from "./submissions.js";
-import ticketsRouter from "./tickets.js";
-import adminRouter from "./admin.js";
-import announcementsRouter from "./announcements.js";
-import statsRouter from "./stats.js";
-import settingsRouter from "./settings.js";
-import rolesRouter from "./roles.js";
-import seedRouter from "./seed.js";
-import profileRouter from "./profile.js";
-import tiertestRouter from "./tiertest.js";
-import challengesRouter from "./challenges.js";
-import notificationsRouter from "./notifications.js";
+import healthRouter from "./health";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
-router.use(authRouter);
-router.use(discordRouter);
-router.use(playersRouter);
-router.use(leaderboardRouter);
-router.use(submissionsRouter);
-router.use(ticketsRouter);
-router.use(adminRouter);
-router.use(announcementsRouter);
-router.use(statsRouter);
-router.use(settingsRouter);
-router.use(rolesRouter);
-router.use(seedRouter);
-router.use(profileRouter);
-router.use(tiertestRouter);
-router.use(challengesRouter);
-router.use(notificationsRouter);
 
 export default router;

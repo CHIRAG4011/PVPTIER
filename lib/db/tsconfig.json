@@ -8,6 +8,5 @@
     "rootDir": "src",
     "types": ["node"]
   },
-  "include": ["src"],
-  "exclude": ["src/schema"]
+  "include": ["src"]
 }
