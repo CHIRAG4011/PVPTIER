@@ -7,8 +7,8 @@ const router: IRouter = Router();
 router.post("/setup-admin", async (req: Request, res: Response): Promise<void> => {
   const { email, setupKey } = req.body;
 
-  const expectedKey = process.env.SETUP_SECRET || "sovereign-setup-2024";
-  if (setupKey !== expectedKey) {
+  const expectedKey = process.env.SETUP_SECRET;
+  if (!expectedKey || setupKey !== expectedKey) {
     res.status(403).json({ error: "forbidden", message: "Invalid setup key" });
     return;
   }

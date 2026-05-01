@@ -77,21 +77,24 @@ const DEFAULT_SETTINGS: Record<string, string> = {
 };
 
 async function ensureAdminAccount() {
+  const adminEmail = process.env.ADMIN_SETUP_EMAIL;
+  const adminPassword = process.env.ADMIN_SETUP_PASSWORD;
+  if (!adminEmail || !adminPassword) return;
   try {
-    const existing = await User.findOne({ email: "admin@pvp.gg" });
+    const existing = await User.findOne({ email: adminEmail.toLowerCase() });
     if (!existing) {
-      const passwordHash = await hashPassword("Admin1234!");
+      const passwordHash = await hashPassword(adminPassword);
       await User.create({
-        email: "admin@pvp.gg",
-        username: "Admin",
+        email: adminEmail.toLowerCase(),
+        username: adminEmail.split("@")[0],
         passwordHash,
         role: "superadmin",
         isBanned: false,
       });
-      logger.info("Default admin account created (admin@pvp.gg)");
+      logger.info({ email: adminEmail }, "Admin account bootstrapped from env");
     }
   } catch (err) {
-    logger.warn({ err }, "Could not ensure admin account (will retry on next start)");
+    logger.warn({ err }, "Could not ensure admin account");
   }
 }
 
