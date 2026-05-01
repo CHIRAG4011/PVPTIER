@@ -3,7 +3,7 @@
   "buildCommand": "cd ../.. && pnpm --filter @workspace/api-server run build",
   "outputDirectory": "public",
   "functions": {
-    "api/index.ts": {
+    "api/index.js": {
       "memory": 1024,
       "maxDuration": 30
     }
