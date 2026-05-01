@@ -1,6 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
+import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -102,28 +103,53 @@ export default function TierTest() {
 
   const hasPending = myApplications.some(a => a.status === "pending" || a.status === "in_queue");
 
+  const cardVariants = {
+    hidden: { opacity: 0, y: 24, scale: 0.97 },
+    visible: (i = 0) => ({
+      opacity: 1, y: 0, scale: 1,
+      transition: { duration: 0.5, delay: i * 0.1, ease: [0.2, 0.8, 0.2, 1] },
+    }),
+  };
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-12 max-w-3xl">
-        <div className="mb-8">
+        <motion.div
+          className="mb-8"
+          initial={{ opacity: 0, y: -16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           <h1 className="text-4xl font-display font-bold neon-text-primary mb-2 flex items-center gap-3">
-            <Trophy className="w-8 h-8 text-primary" />
+            <Trophy className="w-8 h-8 text-primary animate-float" />
             Apply for Tier Test
           </h1>
           <p className="text-muted-foreground">
             Think you deserve a higher tier? Submit an application and a tier tester will fight you to evaluate your skill.
           </p>
-        </div>
+        </motion.div>
 
         {myApplications.length > 0 && (
-          <div className="glass-card rounded-2xl p-6 border-border mb-8">
+          <motion.div
+            className="glass-card rounded-2xl p-6 border-border mb-8"
+            initial="hidden"
+            animate="visible"
+            variants={cardVariants}
+            custom={0}
+          >
             <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
               <Clock className="w-5 h-5 text-primary" />
               Your Applications
             </h2>
             <div className="space-y-3">
-              {myApplications.map((app: any) => (
-                <div key={app.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border">
+              {myApplications.map((app: any, idx: number) => (
+                <motion.div
+                  key={app.id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border hover:border-primary/30 transition-colors"
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.07 }}
+                >
                   <div>
                     <div className="font-medium text-sm">{app.minecraftUsername}</div>
                     <div className="text-xs text-muted-foreground">
@@ -140,23 +166,34 @@ export default function TierTest() {
                     {statusIcon(app.status)}
                     {statusLabel(app.status)}
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {hasPending ? (
-          <div className="glass-card rounded-2xl p-8 border-blue-500/20 text-center">
-            <Users className="w-12 h-12 text-blue-400 mx-auto mb-4" />
+          <motion.div
+            className="glass-card rounded-2xl p-8 border-blue-500/20 text-center"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Users className="w-12 h-12 text-blue-400 mx-auto mb-4 animate-float" />
             <h2 className="text-xl font-bold mb-2">You're in the Queue!</h2>
             <p className="text-muted-foreground text-sm max-w-md mx-auto">
               Your application has been accepted. A tier tester will reach out to schedule your fight. 
               Please be available on Discord. You cannot submit another application while one is active.
             </p>
-          </div>
+          </motion.div>
         ) : (
-          <div className="glass-card rounded-2xl p-6 md:p-8 border-primary/20">
+          <motion.div
+            className="glass-card rounded-2xl p-6 md:p-8 border-primary/20"
+            initial="hidden"
+            animate="visible"
+            variants={cardVariants}
+            custom={1}
+          >
             <div className="bg-blue-500/10 border border-blue-500/20 text-blue-200 rounded-lg p-4 mb-6 flex gap-3 text-sm">
               <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
               <div>
@@ -180,7 +217,7 @@ export default function TierTest() {
                     <FormItem>
                       <FormLabel>Your Minecraft IGN</FormLabel>
                       <FormControl>
-                        <Input placeholder="Notch" {...field} className="bg-background/50 border-border/50" />
+                        <Input placeholder="Notch" {...field} className="bg-background/50 border-border/50 focus:border-primary/60 focus:shadow-[0_0_12px_-2px_hsl(var(--primary)/0.4)] transition-all" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -239,7 +276,7 @@ export default function TierTest() {
                       <FormControl>
                         <Textarea
                           placeholder="Tell us your preferred gamemode, availability, or anything else..."
-                          className="bg-background/50 border-border/50 resize-none"
+                          className="bg-background/50 border-border/50 resize-none focus:border-primary/60 focus:shadow-[0_0_12px_-2px_hsl(var(--primary)/0.4)] transition-all"
                           rows={3}
                           {...field}
                         />
@@ -249,12 +286,21 @@ export default function TierTest() {
                   )}
                 />
 
-                <Button type="submit" className="w-full h-12 text-base font-bold" disabled={submitting}>
-                  {submitting ? "Submitting..." : "Join the Tier Test Queue"}
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-base font-bold neon-btn shadow-[0_0_20px_-4px_hsl(var(--primary)/0.5)]"
+                  disabled={submitting}
+                >
+                  {submitting ? (
+                    <span className="flex items-center gap-2">
+                      <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Submitting...
+                    </span>
+                  ) : "Join the Tier Test Queue"}
                 </Button>
               </form>
             </Form>
-          </div>
+          </motion.div>
         )}
       </div>
     </Layout>

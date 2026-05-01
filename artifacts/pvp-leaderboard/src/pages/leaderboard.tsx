@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
+import { motion, AnimatePresence } from "framer-motion";
 import { useGetLeaderboard, useGetLeaderboardSummary } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout/Layout";
 import { TierBadge } from "@/components/ui/tier-badge";
@@ -211,7 +212,8 @@ export default function Leaderboard() {
                       No players found for these filters.
                     </div>
                   ) : (
-                    leaderboard?.entries.map((entry, i) => {
+                    <AnimatePresence mode="sync">
+                    {leaderboard?.entries.map((entry, i) => {
                       const isTop = entry.rank <= 3;
                       const rowAccent =
                         entry.rank === 1 ? "before:bg-yellow-500" :
@@ -219,10 +221,14 @@ export default function Leaderboard() {
                         entry.rank === 3 ? "before:bg-amber-600" :
                         "before:bg-transparent";
                       return (
-                        <div
+                        <motion.div
                           key={entry.player.id}
-                          className={`relative grid items-center gap-2 px-4 py-4 border-b border-border/40 hover:bg-primary/5 transition-all duration-300 group scanline-overlay animate-row-rise before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-r ${rowAccent} ${isTop ? "bg-gradient-to-r from-primary/[0.04] to-transparent" : ""}`}
-                          style={{ gridTemplateColumns: "72px minmax(220px, 1fr) 110px 140px 90px 240px", animationDelay: `${i * 30}ms` }}
+                          initial={{ opacity: 0, x: -16 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 16 }}
+                          transition={{ duration: 0.3, delay: Math.min(i * 0.025, 0.6) }}
+                          className={`relative grid items-center gap-2 px-4 py-4 border-b border-border/40 hover:bg-primary/5 transition-all duration-300 group scanline-overlay before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-r ${rowAccent} ${isTop ? "bg-gradient-to-r from-primary/[0.04] to-transparent" : ""}`}
+                          style={{ gridTemplateColumns: "72px minmax(220px, 1fr) 110px 140px 90px 240px" }}
                         >
                           {/* Rank */}
                           <div className="flex justify-center">
@@ -271,9 +277,10 @@ export default function Leaderboard() {
                           <div className="flex justify-center">
                             <TopGamemodes stats={(entry.player as any).gamemodeStats ?? []} fallbackTier={(entry.player as any).tier} />
                           </div>
-                        </div>
+                        </motion.div>
                       );
-                    })
+                    })}
+                    </AnimatePresence>
                   )}
                 </div>
               </div>

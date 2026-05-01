@@ -1,27 +1,35 @@
-# Workspace
+# PvP Leaderboard
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+Minecraft PvP ranking platform. pnpm monorepo — React/Vite frontend (port 24684) + Express API (port 8080) + MongoDB (via MONGODB_URI secret, `teamsovergin` database).
 
 ## Stack
 
-- **Monorepo tool**: pnpm workspaces
-- **Node.js version**: 24
-- **Package manager**: pnpm
-- **TypeScript version**: 5.9
-- **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
-- **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+- **Frontend**: React + Vite, Tailwind CSS v4, Framer Motion, shadcn/ui components
+- **Backend**: Express 5, Mongoose, MongoDB Atlas
+- **Monorepo**: pnpm workspaces, TypeScript
+- **Animation**: Framer Motion, custom CSS keyframes, tw-animate-css
 
-## Key Commands
+## Key Files
 
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/api-server run dev` — run API server locally
+- `artifacts/pvp-leaderboard/src/` — frontend source
+  - `pages/` — home, leaderboard, tier-test, submit, admin/*
+  - `components/effects/` — ParticlesBackground, CustomCursor, TypingText
+  - `components/layout/` — Layout (includes particles+cursor), Navbar, AdminLayout
+  - `lib/site-settings.tsx` — SiteSettingsProvider (theme + document.title)
+  - `hooks/use-gamemodes.ts` — useGamemodes (public), useAllGamemodes (admin)
+  - `index.css` — neon/glassmorphism animations + utilities
+- `artifacts/api-server/src/routes/` — gamemodes, submissions, leaderboard, auth, settings
 
-See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
+## Features
+
+- Glassmorphism dark theme, neon cyan/purple/emerald color palette
+- Animated canvas particle background with connecting lines
+- Custom glow cursor with ring (desktop only)
+- Framer Motion hero animations + scroll-reveal on all sections
+- Typing animation cycling through phrases on the homepage
+- Staggered AnimatePresence leaderboard entry animations
+- Admin gamemodes CRUD page (`/admin/gamemodes`) with emoji picker
+- Dynamic gamemodes sync: submit form, leaderboard filters, player stats all pull from DB
+- Site name propagates to browser tab title via SiteSettingsProvider

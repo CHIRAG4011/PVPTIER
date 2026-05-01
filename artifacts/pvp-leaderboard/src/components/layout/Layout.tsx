@@ -1,6 +1,8 @@
 import { ReactNode } from "react";
 import { Navbar } from "./Navbar";
 import { useSiteSettings } from "@/lib/site-settings";
+import { ParticlesBackground } from "@/components/effects/ParticlesBackground";
+import { CustomCursor } from "@/components/effects/CustomCursor";
 
 export function Layout({ children }: { children: ReactNode }) {
   const settings = useSiteSettings();
@@ -9,15 +11,19 @@ export function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background text-foreground relative overflow-x-hidden">
+      <CustomCursor />
+      <ParticlesBackground />
+
       {/* Global ambient backdrop */}
-      <div className="fixed inset-0 pointer-events-none z-0">
+      <div className="fixed inset-0 pointer-events-none z-[1]">
         <div className="absolute inset-0 grid-bg opacity-20" />
         <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-primary/5 blur-[140px] rounded-full" />
         <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-accent/5 blur-[140px] rounded-full" />
+        <div className="absolute top-1/3 right-1/3 w-[400px] h-[400px] bg-violet-500/4 blur-[120px] rounded-full" />
       </div>
 
       <Navbar />
-      <main className="flex-1 w-full relative z-10">
+      <main className="flex-1 w-full relative z-10 animate-page-enter">
         <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background pointer-events-none opacity-50" />
         <div className="relative z-10">
           {children}

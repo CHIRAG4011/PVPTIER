@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useGetGlobalStats, useGetRecentActivity, useGetTopPlayers, useListAnnouncements } from "@workspace/api-client-react";
 import { GamemodeIcon } from "@/components/ui/gamemode-icon";
 import { TierBadge } from "@/components/ui/tier-badge";
-import { Swords, Trophy, Users, ShieldAlert, ArrowRight, Skull, Globe, Zap, Flame, Leaf, Wind, Axe, History, Edit, Trash2, Server, Clock, Plus } from "lucide-react";
+import { Swords, Trophy, Users, ShieldAlert, ArrowRight, History, Edit, Trash2, Server, Clock, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiUrl } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +13,22 @@ import { cn } from "@/lib/utils";
 import { useSiteSettings } from "@/lib/site-settings";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
+import { TypingText } from "@/components/effects/TypingText";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, delay: i * 0.1, ease: [0.2, 0.8, 0.2, 1] },
+  }),
+};
+
+const stagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08 } },
+};
 
 export default function Home() {
   const { data: stats, isLoading: statsLoading } = useGetGlobalStats();
@@ -56,55 +72,97 @@ export default function Home() {
   return (
     <Layout>
       {/* Hero Section */}
-      <section className="relative py-20 lg:py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?q=80&w=2070')] bg-cover bg-center opacity-10 mix-blend-overlay"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/80 to-background"></div>
-        {/* Animated glow orbs */}
-        <div className="pointer-events-none absolute top-10 left-1/3 w-[400px] h-[400px] bg-primary/15 blur-[120px] rounded-full animate-float" />
-        <div className="pointer-events-none absolute bottom-10 right-1/3 w-[300px] h-[300px] bg-accent/15 blur-[120px] rounded-full animate-float" style={{ animationDelay: '1.5s' }} />
+      <section className="relative py-20 lg:py-36 overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?q=80&w=2070')] bg-cover bg-center opacity-8 mix-blend-overlay" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/75 to-background" />
+
+        {/* Animated ambient orbs */}
+        <div className="pointer-events-none absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/12 blur-[130px] rounded-full animate-float" />
+        <div className="pointer-events-none absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-violet-600/10 blur-[120px] rounded-full animate-float" style={{ animationDelay: '2s' }} />
+        <div className="pointer-events-none absolute top-1/3 right-1/6 w-[250px] h-[250px] bg-accent/8 blur-[100px] rounded-full animate-float" style={{ animationDelay: '1s' }} />
         <div className="pointer-events-none absolute inset-0 grid-bg opacity-30" />
 
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center animate-row-rise">
+          <motion.div
+            className="max-w-4xl mx-auto text-center"
+            initial="hidden"
+            animate="visible"
+            variants={stagger}
+          >
             {siteSettings.homepage_season_badge && (
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-primary mb-6 animate-pulse-glow">
-                <Trophy className="w-4 h-4" />
-                <span className="text-sm font-medium font-mono uppercase tracking-widest">{siteSettings.homepage_season_badge}</span>
-              </div>
+              <motion.div variants={fadeUp} custom={0}>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-primary mb-6 neon-border">
+                  <Trophy className="w-4 h-4" />
+                  <span className="text-sm font-medium font-mono uppercase tracking-widest">{siteSettings.homepage_season_badge}</span>
+                </div>
+              </motion.div>
             )}
-            
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 font-display">
-              {siteSettings.homepage_hero_title?.split("\n").map((line, i, arr) => (
-                <span key={i}>
-                  {i === arr.length - 1
-                    ? <span className="shimmer-text">{line}</span>
-                    : <span className="neon-text-primary">{line} <br /></span>
-                  }
+
+            <motion.div variants={fadeUp} custom={1}>
+              <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-4 font-display">
+                <span className="neon-text-primary block">
+                  {siteSettings.homepage_hero_title?.split("\n")[0] || "DOMINATE THE"}
                 </span>
-              )) || <><span className="neon-text-primary">DOMINATE THE</span> <br /><span className="shimmer-text">COMPETITION</span></>}
-            </h1>
-            
-            <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
+                <span className="shimmer-text block mt-1">
+                  {siteSettings.homepage_hero_title?.split("\n")[1] || "COMPETITION"}
+                </span>
+              </h1>
+            </motion.div>
+
+            <motion.div variants={fadeUp} custom={2} className="mb-6">
+              <div className="text-2xl font-bold font-display text-muted-foreground/80 h-9 flex items-center justify-center">
+                <TypingText
+                  texts={["Sword. Axe. UHC. All gamemodes.", "Climb the tiers. Prove your worth.", "The most elite Minecraft PvP platform.", "Battle the best. Rise to the top."]}
+                  className="text-primary/90"
+                  typingSpeed={55}
+                />
+              </div>
+            </motion.div>
+
+            <motion.p variants={fadeUp} custom={3} className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
               {siteSettings.homepage_hero_subtitle || "The most prestigious Minecraft PvP ranking platform. Battle top players, climb the tiers, and prove your worth in the ultimate arena."}
-            </p>
-            
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="lg" className="w-full sm:w-auto text-lg h-14 px-8 font-bold relative overflow-hidden group shadow-[0_0_24px_-4px_hsl(var(--primary)/0.6)] hover:shadow-[0_0_32px_-2px_hsl(var(--primary)/0.8)] transition-all" asChild>
+            </motion.p>
+
+            <motion.div variants={fadeUp} custom={4} className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button
+                size="lg"
+                className="w-full sm:w-auto text-lg h-14 px-8 font-bold neon-btn shadow-[0_0_24px_-4px_hsl(var(--primary)/0.6)]"
+                asChild
+              >
                 <Link href="/leaderboard">
                   <span className="relative z-10 flex items-center gap-2">View Leaderboards <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" /></span>
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg h-14 px-8 border-primary/30 hover:border-primary/60 hover:bg-primary/10 font-bold transition-all" asChild>
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto text-lg h-14 px-8 border-primary/30 hover:border-primary/60 hover:bg-primary/10 font-bold transition-all neon-btn"
+                asChild
+              >
                 <Link href="/register">Join the Arena</Link>
               </Button>
-            </div>
-          </div>
+            </motion.div>
+
+            {/* Scroll hint */}
+            <motion.div variants={fadeUp} custom={5} className="mt-14 flex flex-col items-center gap-2 opacity-40">
+              <div className="w-5 h-8 rounded-full border-2 border-primary/40 flex items-start justify-center p-1">
+                <div className="w-1 h-2 rounded-full bg-primary animate-bounce" />
+              </div>
+              <span className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Scroll</span>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
       <div className="container mx-auto px-4 py-12">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-60px" }}
+          variants={stagger}
+        >
           {[
             { icon: Users, label: "Total Players", value: stats?.totalPlayers.toLocaleString(), color: "primary" },
             { icon: Swords, label: "Matches Played", value: stats?.totalMatches.toLocaleString(), color: "accent" },
@@ -116,14 +174,15 @@ export default function Home() {
               yellow: "from-yellow-500/30 to-yellow-500/5 text-yellow-500 border-yellow-500/40",
             };
             return (
-              <div
+              <motion.div
                 key={card.label}
-                className="relative glass-card p-6 rounded-xl flex items-center gap-4 group hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 scanline-overlay animate-row-rise"
-                style={{ animationDelay: `${idx * 80}ms` }}
+                variants={fadeUp}
+                custom={idx}
+                className="relative glass-card p-6 rounded-xl flex items-center gap-4 group hover-glow-card scanline-overlay cursor-default"
               >
                 <div className="absolute top-0 left-0 w-8 h-8 border-t border-l border-primary/40 rounded-tl-xl" />
                 <div className="absolute bottom-0 right-0 w-8 h-8 border-b border-r border-primary/40 rounded-br-xl" />
-                <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${colorMap[card.color]} border flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${colorMap[card.color]} border flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
                   <card.icon className="w-6 h-6" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -131,20 +190,26 @@ export default function Home() {
                   {statsLoading ? (
                     <Skeleton className="h-8 w-24" />
                   ) : (
-                    <h3 className={`font-bold font-display truncate ${card.isText ? 'text-xl' : 'text-3xl'} ${card.color === 'primary' ? 'text-primary neon-text-primary' : card.color === 'yellow' ? 'text-yellow-500' : 'text-accent neon-text-accent'}`}>
+                    <h3 className={`font-bold font-display truncate ${card.isText ? 'text-xl' : 'text-3xl'} ${card.color === 'primary' ? 'text-primary neon-text-primary' : card.color === 'yellow' ? 'text-yellow-500' : 'text-accent neon-text-accent'} animate-count-pop`}>
                       {card.value}
                     </h3>
                   )}
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Top Players by Gamemode */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="flex items-center justify-between">
+            <motion.div
+              className="flex items-center justify-between"
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
               <h2 className="text-2xl font-bold font-display flex items-center gap-2">
                 <Trophy className="text-primary w-6 h-6" />
                 Kings of the Arena
@@ -152,47 +217,61 @@ export default function Home() {
               <Button variant="ghost" className="text-sm" asChild>
                 <Link href="/leaderboard">See all <ArrowRight className="w-4 h-4 ml-1" /></Link>
               </Button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            </motion.div>
+
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-40px" }}
+              variants={stagger}
+            >
               {topLoading ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton key={i} className="h-24 w-full rounded-xl" />
                 ))
               ) : topPlayers?.byGamemode && (
-                Object.entries(topPlayers.byGamemode).filter(([, player]) => player !== null).slice(0, 6).map(([gamemode, player]) => (
-                  <Link key={gamemode} href={`/player/${player!.id}`}>
-                    <div className="glass-card p-4 rounded-xl hover:border-primary/50 transition-colors cursor-pointer group flex items-center gap-4">
-                      <div className="relative">
-                        <Avatar className="h-12 w-12 border-2 border-primary/50 group-hover:border-primary transition-colors">
-                          <AvatarImage src={`https://mc-heads.net/avatar/${player.minecraftUsername}/64`} />
-                          <AvatarFallback>{player.minecraftUsername.substring(0, 2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5">
-                          <GamemodeIcon gamemode={gamemode} size={14} />
+                Object.entries(topPlayers.byGamemode).filter(([, player]) => player !== null).slice(0, 6).map(([gamemode, player], idx) => (
+                  <motion.div key={gamemode} variants={fadeUp} custom={idx}>
+                    <Link href={`/player/${player!.id}`}>
+                      <div className="glass-card p-4 rounded-xl hover-glow-card cursor-pointer group flex items-center gap-4 hover:border-primary/50 transition-colors">
+                        <div className="relative">
+                          <Avatar className="h-12 w-12 border-2 border-primary/50 group-hover:border-primary transition-colors">
+                            <AvatarImage src={`https://mc-heads.net/avatar/${player.minecraftUsername}/64`} />
+                            <AvatarFallback>{player.minecraftUsername.substring(0, 2).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5">
+                            <GamemodeIcon gamemode={gamemode} size={14} />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="font-bold truncate text-foreground group-hover:text-primary transition-colors">{player.minecraftUsername}</h4>
+                            <TierBadge tier={player.tier} size="sm" />
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span className="capitalize font-medium text-foreground">{gamemode}</span>
+                            <span>{player.elo} Score</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-bold truncate text-foreground group-hover:text-primary transition-colors">{player.minecraftUsername}</h4>
-                          <TierBadge tier={player.tier} size="sm" />
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span className="capitalize font-medium text-foreground">{gamemode}</span>
-                          <span>{player.elo} Score</span>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
+                    </Link>
+                  </motion.div>
                 ))
               )}
-            </div>
+            </motion.div>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-8">
             {/* Announcements */}
-            <div className="glass-card rounded-xl border-border overflow-hidden">
+            <motion.div
+              className="glass-card rounded-xl border-border overflow-hidden"
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
               <div className="bg-muted/30 p-4 border-b border-border flex items-center gap-2">
                 <ShieldAlert className="w-5 h-5 text-primary" />
                 <h3 className="font-bold font-display">Announcements</h3>
@@ -234,10 +313,16 @@ export default function Home() {
                   </Link>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Recently Created Matches (Challenges/Queue) */}
-            <div className="glass-card rounded-xl border-border overflow-hidden">
+            {/* Recently Created Matches */}
+            <motion.div
+              className="glass-card rounded-xl border-border overflow-hidden"
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
               <div className="bg-muted/30 p-4 border-b border-border flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Plus className="w-5 h-5 text-primary" />
@@ -289,10 +374,16 @@ export default function Home() {
                   </div>
                 )}
               </div>
-            </div>
+            </motion.div>
 
-            {/* Recent Match Results (Winners / Losers) */}
-            <div className="glass-card rounded-xl border-border overflow-hidden">
+            {/* Recent Match Results */}
+            <motion.div
+              className="glass-card rounded-xl border-border overflow-hidden"
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
               <div className="bg-muted/30 p-4 border-b border-border flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <History className="w-5 h-5 text-primary" />
@@ -354,7 +445,7 @@ export default function Home() {
                   </div>
                 )}
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>

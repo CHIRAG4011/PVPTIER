@@ -275,6 +275,65 @@
 }
 .animate-row-rise { animation: row-rise 0.45s ease-out both; }
 
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.animate-blink-cursor { animation: blink-cursor 1s step-end infinite; }
+
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-page-enter { animation: page-enter 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@keyframes neon-border-pulse {
+  0%, 100% { box-shadow: 0 0 6px hsl(var(--primary) / 0.3), inset 0 0 6px hsl(var(--primary) / 0.05); }
+  50%      { box-shadow: 0 0 20px hsl(var(--primary) / 0.6), inset 0 0 12px hsl(var(--primary) / 0.1); }
+}
+.neon-border { animation: neon-border-pulse 3s ease-in-out infinite; }
+
+@keyframes hero-rise {
+  from { opacity: 0; transform: translateY(30px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-hero-rise { animation: hero-rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@keyframes card-reveal {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-card-reveal { animation: card-reveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+.hover-glow-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.hover-glow-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 8px 32px -8px hsl(var(--primary) / 0.35), 0 0 0 1px hsl(var(--primary) / 0.2);
+}
+
+.neon-btn {
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.25s ease, transform 0.15s ease;
+}
+.neon-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, hsl(var(--primary) / 0.4) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.neon-btn:hover::after { opacity: 1; }
+.neon-btn:hover {
+  box-shadow: 0 0 28px -4px hsl(var(--primary) / 0.7);
+  transform: scale(1.03);
+}
+.neon-btn:active { transform: scale(0.98); }
+
 .grid-bg {
   background-image:
     linear-gradient(hsl(var(--primary) / 0.06) 1px, transparent 1px),
