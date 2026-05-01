@@ -16,6 +16,7 @@ import profileRouter from "./profile.js";
 import tiertestRouter from "./tiertest.js";
 import challengesRouter from "./challenges.js";
 import notificationsRouter from "./notifications.js";
+import gamemodesRouter from "./gamemodes.js";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(profileRouter);
 router.use(tiertestRouter);
 router.use(challengesRouter);
 router.use(notificationsRouter);
+router.use(gamemodesRouter);
 
 export default router;

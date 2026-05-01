@@ -41,3 +41,4 @@ export * from "./models/UserCustomRole";
 export * from "./models/PasswordReset";
 export * from "./models/Challenge";
 export * from "./models/Notification";
+export * from "./models/Gamemode";

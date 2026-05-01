@@ -11,8 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSkinFace, resolveUserAvatarSrc } from "@/lib/skin";
 import { Trophy, Search, ChevronLeft, ChevronRight, Crown, Medal, Award, Zap, TrendingUp, Users, Swords } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useGamemodes } from "@/hooks/use-gamemodes";
 
-const GAMEMODES = ["sword", "axe", "uhc", "vanilla", "smp", "diapot", "nethpot", "elytra"];
 const TIERS = ["HT1", "HT2", "HT3", "HT4", "HT5", "LT1", "LT2", "LT3", "LT4", "LT5"];
 
 function PlayerAvatar({ player, className }: { player: { minecraftUsername: string; customSkinUrl?: string | null; avatarUrl?: string | null }; className?: string }) {
@@ -33,7 +33,7 @@ function tierRank(tier?: string | null): number {
   return (isHigh ? 0 : 5) + num;
 }
 
-function TopGamemodes({ stats, fallbackTier }: { stats: { gamemode: string; tier?: string | null }[]; fallbackTier?: string | null }) {
+function TopGamemodes({ stats, fallbackTier, emojiMap }: { stats: { gamemode: string; tier?: string | null }[]; fallbackTier?: string | null; emojiMap?: Record<string, string> }) {
   const ranked = stats
     .filter(s => s.tier)
     .sort((a, b) => tierRank(a.tier) - tierRank(b.tier))
@@ -54,13 +54,14 @@ function TopGamemodes({ stats, fallbackTier }: { stats: { gamemode: string; tier
     <div className="flex items-center justify-center gap-1">
       {ranked.map(s => {
         const isHigh = (s.tier as string).startsWith("HT");
+        const emoji = emojiMap?.[s.gamemode.toLowerCase()];
         return (
           <div
             key={s.gamemode}
             className={`flex items-center gap-0.5 px-1 py-0.5 rounded-md ${isHigh ? "bg-yellow-500/10" : "bg-muted/30"}`}
             title={`${s.gamemode}: ${s.tier}`}
           >
-            <GamemodeIcon gamemode={s.gamemode} className="w-3 h-3" />
+            <GamemodeIcon gamemode={s.gamemode} emoji={emoji} className="w-3 h-3" size={12} />
             <span className={`text-[10px] font-bold font-mono leading-none ${isHigh ? "text-yellow-400" : "text-muted-foreground"}`}>
               {s.tier}
             </span>
@@ -75,6 +76,12 @@ export default function Leaderboard() {
   const [gamemode, setGamemode] = useState<string>("sword");
   const [tier, setTier] = useState<string>("all");
   const [page, setPage] = useState(1);
+
+  const { data: gamemodesData } = useGamemodes();
+  const emojiMap: Record<string, string> = {};
+  for (const gm of gamemodesData ?? []) {
+    emojiMap[gm.slug.toLowerCase()] = gm.emoji;
+  }
 
   const { data: summary, isLoading: summaryLoading } = useGetLeaderboardSummary();
   const { data: leaderboard, isLoading: leaderboardLoading } = useGetLeaderboard({ 
@@ -106,16 +113,16 @@ export default function Leaderboard() {
           </div>
           
           <div className="flex flex-wrap items-center gap-2 glass-card p-2 rounded-xl w-full md:w-auto">
-            {GAMEMODES.map((gm) => (
+            {(gamemodesData ?? []).map((gm) => (
               <Button
-                key={gm}
-                variant={gamemode === gm ? "secondary" : "ghost"}
+                key={gm.slug}
+                variant={gamemode === gm.slug ? "secondary" : "ghost"}
                 size="sm"
-                className={`capitalize transition-all duration-300 ${gamemode === gm ? "bg-primary/20 text-primary border border-primary/40 shadow-[0_0_12px_-2px_hsl(var(--primary)/0.6)] scale-105" : "hover:scale-105"}`}
-                onClick={() => { setGamemode(gm); setPage(1); }}
+                className={`capitalize transition-all duration-300 ${gamemode === gm.slug ? "bg-primary/20 text-primary border border-primary/40 shadow-[0_0_12px_-2px_hsl(var(--primary)/0.6)] scale-105" : "hover:scale-105"}`}
+                onClick={() => { setGamemode(gm.slug); setPage(1); }}
               >
-                <GamemodeIcon gamemode={gm} className="w-4 h-4 mr-2" />
-                {gm}
+                <GamemodeIcon gamemode={gm.slug} emoji={gm.emoji} className="w-4 h-4 mr-2" size={16} />
+                {gm.name}
               </Button>
             ))}
           </div>
