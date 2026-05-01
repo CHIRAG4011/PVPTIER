@@ -3,6 +3,12 @@ import { User, Player } from "@workspace/db";
 import { RegisterUserBody, LoginUserBody } from "@workspace/api-zod";
 import { signToken, hashPassword, comparePasswords, requireAuth } from "../lib/auth";
 import type { JwtPayload } from "../lib/auth";
+import { logger } from "../lib/logger.js";
+
+function safeErrorMessage(err: unknown, fallback: string): string {
+  if (process.env.NODE_ENV !== "production" && err instanceof Error) return err.message;
+  return fallback;
+}
 
 const router: IRouter = Router();
 
@@ -92,8 +98,8 @@ router.post("/auth/register", async (req: Request, res: Response): Promise<void>
     });
     res.status(201).json({ token, user: formatUser(user) });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Registration failed";
-    res.status(500).json({ error: "server_error", message });
+    logger.error({ err }, "Registration error");
+    res.status(500).json({ error: "server_error", message: safeErrorMessage(err, "Registration failed") });
   }
 });
 
@@ -132,8 +138,8 @@ router.post("/auth/login", async (req: Request, res: Response): Promise<void> =>
     });
     res.json({ token, user: formatUser(user) });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Login failed";
-    res.status(500).json({ error: "server_error", message });
+    logger.error({ err }, "Login error");
+    res.status(500).json({ error: "server_error", message: safeErrorMessage(err, "Login failed") });
   }
 });
 
@@ -147,8 +153,8 @@ router.get("/auth/me", requireAuth, async (req: Request, res: Response): Promise
     }
     res.json(formatUser(user));
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to fetch user";
-    res.status(500).json({ error: "server_error", message });
+    logger.error({ err }, "Fetch user error");
+    res.status(500).json({ error: "server_error", message: safeErrorMessage(err, "Failed to fetch user") });
   }
 });
 
