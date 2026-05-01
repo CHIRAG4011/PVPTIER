@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { User, Player, Match } from "@workspace/db";
-import { hashPassword, signToken } from "../lib/auth";
+import { hashPassword, signToken, requireAdmin } from "../lib/auth";
 
 const router: IRouter = Router();
 
@@ -71,23 +71,8 @@ const FAKE_PLAYERS = [
   { ign: "ToxicArrow", tier: "LT1", elo: 1080, wins: 45, losses: 201 },
 ];
 
-router.post("/admin/seed", async (req: Request, res: Response): Promise<void> => {
+router.post("/admin/seed", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const { force } = req.body;
-
-  const adminPasswordHash = await hashPassword("Admin1234!");
-  try {
-    await User.findOneAndUpdate(
-      { email: "admin@pvp.gg" },
-      {
-        email: "admin@pvp.gg",
-        username: "Admin",
-        passwordHash: adminPasswordHash,
-        role: "superadmin",
-        isBanned: false,
-      },
-      { upsert: true }
-    );
-  } catch {}
 
   const existingPlayer = await Player.findOne();
   if (existingPlayer && !force) {

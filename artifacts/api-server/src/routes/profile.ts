@@ -170,7 +170,7 @@ router.post("/auth/forgot-password", async (req: Request, res: Response): Promis
 
   const user = await User.findOne({ email: email.toLowerCase() });
   if (!user) {
-    res.json({ success: true, message: "If that email exists, a reset token has been generated." });
+    res.json({ success: true, message: "If that email exists, a reset link has been sent. Please check your inbox." });
     return;
   }
 
@@ -182,10 +182,7 @@ router.post("/auth/forgot-password", async (req: Request, res: Response): Promis
 
   res.json({
     success: true,
-    message: "Reset token generated.",
-    resetToken: token,
-    note: "Share this token with the user. They can use it at /reset-password",
-    expiresAt: expiresAt.toISOString(),
+    message: "If that email exists, a reset link has been sent. Please check your inbox.",
   });
 });
 
