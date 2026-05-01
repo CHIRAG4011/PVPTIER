@@ -1,0 +1,77 @@
+Upgrade my tier test and leaderboard website into a highly modern, futuristic, and interactive UI with advanced animations, 3D effects, and gaming-style visuals.
+
+🎨 DESIGN STYLE:
+- Dark theme with neon/glow accents (purple, blue, cyan)
+- Glassmorphism (blur backgrounds, transparency)
+- Smooth gradients and dynamic lighting
+- Rounded UI elements (16px–24px radius)
+- Inspired by gaming dashboards + Minecraft + futuristic UI
+
+⚡ GLOBAL ANIMATIONS:
+- Smooth page transitions (fade, slide, zoom)
+- Scroll-based animations (elements reveal on scroll)
+- Staggered animations for lists (leaderboard entries)
+- Micro-interactions on EVERY element
+- Button hover = glow + scale + ripple
+- Card hover = lift + tilt + shadow
+
+🌌 BACKGROUND EFFECTS:
+- Animated gradient background OR particle system
+- Subtle moving particles (like stars or glowing dots)
+- Optional parallax background effect
+
+🖱️ CURSOR EFFECT:
+- Custom cursor with glow effect
+- Cursor trail or light aura following movement
+- Hovering interactive elements increases glow
+
+🎮 3D + MINECRAFT STYLE EFFECTS:
+- Add a 3D Minecraft-style character or avatar (blocky style)
+- On hover:
+  - Character rotates slightly (3D tilt)
+  - Plays small animation (wave, nod, emote)
+- Add subtle floating animation to the character
+
+🏠 HOMEPAGE:
+- Animated hero text (typing or fade-in sequence)
+- Floating 3D object or Minecraft-style avatar
+- CTA buttons with neon glow and hover animation
+- Background particles or animated gradient
+
+🧠 TIER TEST PAGE:
+- Question cards with smooth transitions
+- Progress bar with animation
+- Answer buttons:
+  - Click = ripple + glow burst
+- Animated transitions between questions
+- Optional subtle sound effect on answer click
+
+🏆 LEADERBOARD:
+- Top 3 players highlighted with glow + scale
+- Rank #1 gets crown or animated aura
+- Entries animate in (staggered slide-up)
+- Hovering a player card:
+  - Slight 3D tilt
+  - Glow border
+- Avatars/icons for each player
+
+🧩 COMPONENTS:
+- Glassmorphism navbar (blur + transparency)
+- Animated sidebar or floating menu
+- Toast notifications (slide-in + fade)
+- Modal popups with scale/blur animation
+
+🔊 SOUND DESIGN (OPTIONAL):
+- Soft click sounds on buttons
+- UI hover sound (very subtle)
+- Toggle to enable/disable sound
+
+🚀 PERFORMANCE:
+- Optimize animations for smooth experience
+- Lazy load heavy elements if needed
+- Keep UI smooth and responsive
+
+🎯 FINAL GOAL:
+Make the website feel like a premium gaming dashboard with immersive animations, similar to a Minecraft-inspired futuristic UI with high-end visuals.
+
+Return full updated code with proper structure.
