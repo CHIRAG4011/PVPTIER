@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "buildCommand": "pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/pvp-leaderboard run build",
+  "outputDirectory": "artifacts/pvp-leaderboard/dist/public",
+  "functions": {
+    "api/index.ts": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" },
+    { "source": "/((?!api).*)", "destination": "/index.html" }
+  ]
+}

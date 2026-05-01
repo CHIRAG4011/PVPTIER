@@ -22,6 +22,14 @@ Minecraft PvP ranking platform. pnpm monorepo — React/Vite frontend (port 2468
   - `index.css` — neon/glassmorphism animations + utilities
 - `artifacts/api-server/src/routes/` — gamemodes, submissions, leaderboard, auth, settings
 
+## Vercel Deployment
+
+- `vercel.json` — configures build command, output directory, and API routing
+- `api/index.ts` — Vercel serverless function entry point that wraps the Express app
+- Frontend output: `artifacts/pvp-leaderboard/dist/public`
+- API routes (`/api/*`) are rewritten to the serverless function
+- Required Vercel environment variables: `MONGODB_URI`, `SESSION_SECRET`, `ADMIN_SETUP_EMAIL`, `ADMIN_SETUP_PASSWORD`
+
 ## Features
 
 - Glassmorphism dark theme, neon cyan/purple/emerald color palette

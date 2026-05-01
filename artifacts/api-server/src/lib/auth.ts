@@ -2,9 +2,12 @@ import { type Request, type Response, type NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 
-const JWT_SECRET = process.env.SESSION_SECRET;
-if (!JWT_SECRET) {
-  throw new Error("SESSION_SECRET environment variable is required but not set.");
+function getJwtSecret(): string {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    throw new Error("SESSION_SECRET environment variable is required but not set.");
+  }
+  return secret;
 }
 
 export interface JwtPayload {
@@ -15,12 +18,12 @@ export interface JwtPayload {
 }
 
 export function signToken(payload: JwtPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: "7d" });
 }
 
 export function verifyToken(token: string): JwtPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as JwtPayload;
+    return jwt.verify(token, getJwtSecret()) as JwtPayload;
   } catch {
     return null;
   }
