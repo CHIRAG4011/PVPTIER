@@ -13,8 +13,7 @@ import { toast } from "sonner";
 import { Swords, ShieldAlert, Search, Video, Trophy, Clock, AlertCircle, Gavel, CheckCircle2, Users, Gamepad2 } from "lucide-react";
 import { apiUrl } from "@/lib/api";
 import { useState, useEffect, useRef } from "react";
-
-const GAMEMODES = ["sword", "axe", "uhc", "vanilla", "smp", "diapot", "nethpot", "elytra"];
+import { useGamemodes } from "@/hooks/use-gamemodes";
 
 const submissionSchema = z.object({
   opponentUsername: z.string().min(1, { message: "Opponent IGN is required" }),
@@ -126,6 +125,7 @@ export default function SubmitMatch() {
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [submitting, setSubmitting] = useState(false);
+  const { data: gamemodes = [] } = useGamemodes();
 
   const prefilledOpponent = new URLSearchParams(window.location.search).get("opponent") || "";
 
@@ -264,8 +264,13 @@ export default function SubmitMatch() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {GAMEMODES.map(gm => (
-                              <SelectItem key={gm} value={gm} className="capitalize text-base py-2.5">{gm}</SelectItem>
+                            {gamemodes.map(gm => (
+                              <SelectItem key={gm.slug} value={gm.slug} className="text-base py-2.5">
+                                <span className="flex items-center gap-2">
+                                  {gm.emoji && <span>{gm.emoji}</span>}
+                                  {gm.name}
+                                </span>
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>

@@ -37,6 +37,7 @@ import AdminSettings from "@/pages/admin/settings";
 import AdminRoles from "@/pages/admin/roles";
 import AdminMatches from "@/pages/admin/matches";
 import AdminTierTests from "@/pages/admin/tiertests";
+import AdminGamemodes from "@/pages/admin/gamemodes";
 import TierTest from "@/pages/tier-test";
 
 const queryClient = new QueryClient({
@@ -81,6 +82,7 @@ function Router() {
       <Route path="/admin/roles" component={AdminRoles} />
       <Route path="/admin/matches" component={AdminMatches} />
       <Route path="/admin/tier-tests" component={AdminTierTests} />
+      <Route path="/admin/gamemodes" component={AdminGamemodes} />
 
       <Route path="/tier-test" component={TierTest} />
 

@@ -1,4 +1,4 @@
-import { Shield, Users, Trophy, Ticket, Target, Bell, History, Menu, LogOut, ChevronLeft, Settings, ScrollText, Swords } from "lucide-react";
+import { Shield, Users, Trophy, Ticket, Target, Bell, History, Menu, LogOut, ChevronLeft, Settings, ScrollText, Swords, Gamepad2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ const adminLinks = [
 ];
 
 const configLinks = [
+  { href: "/admin/gamemodes", label: "Gamemodes", icon: Gamepad2 },
   { href: "/admin/roles", label: "Roles", icon: Shield },
   { href: "/admin/settings", label: "Site Settings", icon: Settings },
 ];

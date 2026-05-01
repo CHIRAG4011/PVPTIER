@@ -81,6 +81,9 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     applyThemeColors(settings);
+    if (settings.site_name) {
+      document.title = settings.site_name;
+    }
   }, [settings]);
 
   useEffect(() => {
